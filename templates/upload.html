@@ -12,7 +12,7 @@
         <main>
             <section class="introduction">
                 <div class="contact-logo">
-                <img src="{{ url_for('static', filename='images/ITHILDIN_logo.png') }}" alt="Logo" class="header-logo">
+                <img src="{{ url_for('static', filename='images/ITHILDIN_logo.jpg') }}" alt="Logo" class="header-logo">
                 </div>
                 <h1>ITHILDIN</h1>
                 <h2>Integrated Tool for Homologous Image Landmark Detection in Insects using Neural networks</h2>
@@ -44,7 +44,7 @@
                 <h2>Upload Files</h2> 
                 <p class="tooltip-text">For optimal prediction, please ensure that the images have a neutral background and clearly show a single, intact mosquito wing.
                     We highly recommend reviewing our <a href="/display_pdf">Image Capture Guidelines</a> for detailed instructions on preparing your wing specimens.
-                    Acceptable file formats include JPG, JPEG, PNG, TIF and TIFF. If you upload other files they will be ignored. You can upload up to 256 MB per upload.
+                    Acceptable file formats include JPG, JPEG, PNG, TIF and TIFF and do not use "." as part of the file name. If you upload other files they will be ignored. You can upload up to 256 MB per upload.
                     For regular uploads or large amounts of images we recommend to install the application locally. 
                     You can find the repository and installation instructions <a href="https://github.com/KNolte19/MosquitoWingClassifier" target="_blank">here</a>.
                     The model takes on average 3 to 5 seconds per image to classify. 
@@ -52,7 +52,7 @@
                     <a href="/get_example"> Click here to get an example prediction.</a>
                 </p>
                 <div class="image-container">
-                    <img src="{{ url_for('static', filename='images/PIPELINE_scheme.png') }}" alt="Wing Image Example">
+                    <img src="{{ url_for('static', filename='images/PIPELINE_scheme.jpg') }}" alt="Wing Image Example">
                 </div> 
 
                 <form action="/upload_folder" method="POST" enctype="multipart/form-data" id="uploadForm">
@@ -88,7 +88,7 @@
                             20359 Hamburg, Germany<br>
                     </div>
                     <div class="contact-logo">
-                        <img src="{{ url_for('static', filename='images/BNITM_Logo.png') }}" alt="BNITM-Logo">
+                        <img src="{{ url_for('static', filename='images/BNITM_Logo.jpg') }}" alt="BNITM-Logo">
                     </div>
                 </div>
             </section>
