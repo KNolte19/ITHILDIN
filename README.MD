@@ -1,12 +1,11 @@
-# ITHILDIN Wing Analysis
-
-**Automated wing morphometric analysis and species identification for insects**
-
-ITHILDIN is a deep learning-based pipeline for analyzing insect wing images, with a focus on mosquitoes and related Diptera. The system performs automated segmentation, landmark detection, species classification, and geometric morphometric analysis.
 
 <p align="left">
   <img src="./static/images/title_page.jpg" width="1200">
 </p>
+
+**Automated wing morphometric analysis and species identification for insects**
+
+ITHILDIN is a deep learning-based pipeline for analyzing insect wing images, with a focus on mosquitoes and related Diptera. The system performs automated segmentation, landmark detection, species classification, and geometric morphometric analysis.
 
 ## Abstract
 Diptera represent one of the most diverse insect orders, including species with essential ecological functions but also important vectors of human and animal pathogens. Their accurate species identification remains a major bottleneck in ecological and epidemiological studies. Morphological identification requires taxonomic expertise, while molecular methods are costly and not universally reliable. Wing geometric morphometrics offers an alternative, but manual landmark annotation is time-consuming and introduces observer bias. We developed ITHILDIN, a fully automated pipeline for landmark and semilandmark annotation of Diptera wings, combining UNet++ segmentation and an Hourglass landmark prediction model. Using mosquitoes as the primary model system, models were trained on 5,991 annotated images and evaluated on 12,522 images across 34 taxa. We assessed landmark annotation accuracy against human observers and ML-Morph, evaluated species identification performance using Linear Discriminant Analysis on 17 homologous landmarks and 52 semilandmarks, and tested out-of-distribution generalisation by reproducing an independent study. Transferability was demonstrated by adapting the pipeline to Drosophilidae and Glossinidae. The Hourglass model achieved a mean landmark error of 4.5 pixels (95% CI: 4.3–4.6), within human observer variability (4.7 pixels, 95% CI: 4.4–5.0) and substantially outperforming ML-Morph (12.7 pixels, 95% CI: 11.1–14.2). The semilandmark-based approach for species identification achieved 91% balanced accuracy across 34 taxa, approaching CNN performance (94%). On out-of-distribution data, the landmark pipeline generalised substantially better than the CNN and a soft-voting ensemble of the landmark and CNN classifiers achieved 88% balanced accuracy on a replicated study. Combining geometric morphometrics with deep learning provides a reproducible, interpretable, and generalisable alternative to black-box CNN classifiers for Diptera wing analysis. By acting as a consistent single observer, the system eliminates inter-observer bias, enabling large-scale and cross-study morphometric analyses of Dipteran wings. The system is publicly available at ithildin.bnitm.de and transferable to other Diptera families with moderate retraining effort.
