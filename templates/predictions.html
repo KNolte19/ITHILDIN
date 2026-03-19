@@ -1,0 +1,75 @@
+<!doctype html>
+<html>
+<head>
+  <title>BALROG Wing Predictions - {{ request }}</title>
+  <link href="/static/css/prediction.css" rel="stylesheet">
+  <style>
+    .low-confidence {
+      color: #802823;
+    }
+    .medium-confidence {
+      color: #A27942;
+    }
+    .high-confidence {
+      color: #326F32;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Image Predictions - {{ request }}</h1>
+    <div class="info-section" style="background-color: #f0f0f0; padding: 15px; margin-bottom: 20px; border-radius: 5px;">
+      <p><strong>Insect Family:</strong> {{ family|capitalize }}</p>
+      <p><strong>Number of Images:</strong> {{ num_images }}</p>
+      <p><strong>Upload Time:</strong> {{ upload_time }} seconds</p>
+      <p><strong>Processing Time:</strong> {{ processing_time }} seconds</p>
+      <p><strong>Total Time:</strong> {{ total_time }} seconds</p>
+      {% if not has_classifier %}
+      <p style="color: #856404; background-color: #fff3cd; padding: 10px; border-radius: 3px; margin-top: 10px;">
+        <strong>Note:</strong> Species identification is only available for mosquito wings. Only landmark predictions are shown for {{ family }} analysis.
+      </p>
+      {% endif %}
+    </div>
+    <a href="/download_csv" class="btn-submit">Download Table as CSV</a>
+    <a href="/download_tps" class="btn-submit">Download Coords as TPS</a>
+    <a href="/download_folder" class="btn-submit">Download Folder</a>
+    <a href="/" class="btn-submit_back">Upload New Images</a>
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th>Image Name</th>
+          <th>Image</th>
+          {% if has_classifier %}
+          <th>Species Prediction</th>
+          <th>Species Confidence</th>
+          <th>Pixel Centroid Size</th>
+          {% endif %}
+          <th>Semilandmark Successful</th>
+          
+        </tr>
+      </thead>
+      <tbody>
+        {% for prediction in predictions %}
+          <tr>
+            <td>{{ prediction.File_Name }}</td>
+
+            <td><img src="{{ prediction.File}}" alt="Image"></td>
+
+            {% if has_classifier %}
+            <td class="{% if prediction.ENS_Predicted_Score > 0.8 %}high-confidence{% elif prediction.ENS_Predicted_Score > 0.5 %}medium-confidence{% else %}low-confidence{% endif %}">
+              {{ prediction.ENS_Predicted_Taxa }}
+            </td>
+            <td class="{% if prediction.ENS_Predicted_Score > 0.8 %}high-confidence{% elif prediction.ENS_Predicted_Score > 0.5 %}medium-confidence{% else %}low-confidence{% endif %}">
+              {{ prediction.ENS_Predicted_Score }}  
+            </td>
+            <td>{{ prediction.Centroid }}</td>
+            {% endif %}
+            <td>{{ prediction.Status }}</td>
+            
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</body>
+</html>

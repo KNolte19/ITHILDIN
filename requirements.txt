@@ -1,0 +1,15 @@
+albumentations==1.4.21
+Flask==3.0.0  
+numpy==1.26.4
+pandas==2.2.3
+Pillow==10.1
+rembg==2.0.55
+scikit-image==0.25.2
+torch==2.6.0 
+torchvision==0.21.0 
+zipp==3.10.0
+gunicorn==22.0.0
+plantcv==4.6
+altair==5.5.0
+segmentation_models_pytorch==0.4.0
+onnxruntime==1.23.2

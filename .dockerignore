@@ -1,0 +1,69 @@
+# Git files
+.git
+.gitattributes
+.gitignore
+
+# Python cache
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Jupyter notebooks (not needed in container)
+*.ipynb
+.ipynb_checkpoints/
+
+# Training data and models (mount as volume if needed, or copy into image during build)
+# Comment out the following lines if models are included in the Docker image:
+# training/models/
+# training/models_tsetse/
+
+# Static requests directory (will be mounted as volume)
+static/requests/*
+
+# Analysis temp files
+analysis/temp/
+
+# Image files (examples/test data)
+training/data/*
+training/data_droso
+training/data_tsetse
+*.png
+*.jpg
+*.jpeg
+*.tif
+*.tiff
+
+# Documentation
+README.MD
+
+# Keep DOCKER.md for in-container reference
+# *.md
+
+# Docker files
+Dockerfile
+.dockerignore
+compose.yaml
+docker-compose.yml
+
+# Other
+*.npy
+.Rhistory

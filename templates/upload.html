@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ITHILDIN</title>
+    <link rel="stylesheet" href="static/css/upload.css">
+</head>
+<body>
+    <div class="container">
+        
+        <main>
+            <section class="introduction">
+                <div class="contact-logo">
+                <img src="{{ url_for('static', filename='images/ITHILDIN_logo.png') }}" alt="Logo" class="header-logo">
+                </div>
+                <h1>ITHILDIN</h1>
+                <h2>Integrated Tool for Homologous Image Landmark Detection in Insects using Neural networks</h2>
+                <p class="tooltip-text"> This tool is designed for Diptera identification and geometric morphometric analysis based on uploaded images of wings.
+                    We refer to the <a href="https://doi.org/10.1371/journal.pcbi.1013435">PLACEHOLDER FOR PUBLICATION</a> for further information.
+                    The system uses AI to annotate landmark and semilandmarks on the vein patterns of the wings of Diptera. Currently it is trained for Culicidae, Drosophila and Glossina.
+                    In addition we utilse the CNN provided by <a href="https://doi.org/10.1371/journal.pcbi.1013435">BALROG</a> to predict the species of mosquito.
+                    BALROG is trained on <a href="/display_other_pdf">34 mosquito species</a> while some species are summarized under the label <a href="/display_other_pdf">"other"</a>.
+                    You will receive a unique identifier for each submission for future reference, please use it if you contact us regarding issues. 
+                </p>
+            </section>
+
+            <section class="search-section">
+                <h2>Search Previous Results</h2>
+                <p class="tooltip-text">Already processed images? Enter your session ID to retrieve your results.</p>
+                {% if error %}
+                <div style="margin-top: 10px; padding: 10px; background-color: #f8d7da; color: #721c24; border-radius: 5px; border: 1px solid #f5c6cb;">
+                    <strong>Error:</strong> {{ error }}
+                </div>
+                {% endif %}
+                <form action="/search_session" method="POST" id="searchForm" style="display: flex; gap: 10px; align-items: center; margin-top: 10px;">
+                    <input type="text" name="session_id" id="sessionIdInput" placeholder="Enter Session ID (e.g., a1b2c3d4)" 
+                           class="input-text" style="flex: 1; padding: 10px; border: 2px solid #4682B4; border-radius: 5px; font-size: 1em;" required/>
+                    <button type="submit" class="btn-submit" style="margin: 0;">Search</button>
+                </form>
+            </section>
+            
+            <section class="upload-section">
+                <h2>Upload Files</h2> 
+                <p class="tooltip-text">For optimal prediction, please ensure that the images have a neutral background and clearly show a single, intact mosquito wing.
+                    We highly recommend reviewing our <a href="/display_pdf">Image Capture Guidelines</a> for detailed instructions on preparing your wing specimens.
+                    Acceptable file formats include JPG, JPEG, PNG, TIF and TIFF. If you upload other files they will be ignored. You can upload up to 256 MB per upload.
+                    For regular uploads or large amounts of images we recommend to install the application locally. 
+                    You can find the repository and installation instructions <a href="https://github.com/KNolte19/MosquitoWingClassifier" target="_blank">here</a>.
+                    The model takes on average 3 to 5 seconds per image to classify. 
+                    By uploading images, you agree to grant us the rights to use them for research and educational purposes, confirming that you own or have the necessary rights for the images.
+                    <a href="/get_example"> Click here to get an example prediction.</a>
+                </p>
+                <div class="image-container">
+                    <img src="{{ url_for('static', filename='images/PIPELINE_scheme.png') }}" alt="Wing Image Example">
+                </div> 
+
+                <form action="/upload_folder" method="POST" enctype="multipart/form-data" id="uploadForm">
+                    <label for="familySelect">Select Insect Family:</label>
+                    <select name="family" id="familySelect" class="input-select">
+                        {% for family in families %}
+                        <option value="{{ family }}" {% if family == 'mosquito' %}selected{% endif %}>{{ family.capitalize() }}</option>
+                        {% endfor %}
+                    </select>
+                    <br><br>
+                    <input type="file" name="file" multiple class="input-file" id="fileInput"/> 
+                    <button type="submit" class="btn-submit" id="uploadButton" disabled>Upload & Classify</button>
+                    <div id="progressContainer" style="display:none; margin-top: 20px;">
+                        <p id="progressText">Processing images, please wait...</p>
+                        <div style="width: 100%; background-color: #f0f0f0; border-radius: 5px;">
+                            <div id="progressBar" style="width: 0%; height: 30px; background-color: #4CAF50; border-radius: 5px; text-align: center; line-height: 30px; color: white;"></div>
+                        </div>
+                    </div>
+                </form>
+
+            </section>
+            
+            <section class="contact">
+                <div class="contact-container">
+                    
+                    <div class="contact-info">
+                        <h2>Contact Us</h2>
+                            <a href="mailto:kristopher.nolte@bnitm.de" class="tooltip">K. Nolte</a>, 
+                            <a href="mailto:felix.sauer@bnitm.de" class="tooltip">F. G. Sauer</a>, 
+                            <a href="mailto:luehken@bnitm.de" class="tooltip">R. Lühken</a><br>
+                            Bernhard-Nocht Institute for Tropical Medicine<br>
+                            Bernhard-Nocht-Straße 74<br>
+                            20359 Hamburg, Germany<br>
+                    </div>
+                    <div class="contact-logo">
+                        <img src="{{ url_for('static', filename='images/BNITM_Logo.png') }}" alt="BNITM-Logo">
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        // Get the file input and upload button elements
+        const fileInput = document.getElementById('fileInput');
+        const uploadButton = document.getElementById('uploadButton');
+        const uploadForm = document.getElementById('uploadForm');
+
+        // Listen for changes on the file input
+        fileInput.addEventListener('change', function() {
+            // Check if files are selected
+            if (fileInput.files.length >  0) {
+                // Enable the upload button
+                uploadButton.disabled = false;
+            } else {
+                // Disable the upload button
+                uploadButton.disabled = true;
+            }
+        });
+    </script>
+</body>
+</html>

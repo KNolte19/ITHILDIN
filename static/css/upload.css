@@ -1,0 +1,255 @@
+/* General Styles */
+body {
+    font-family: 'Segoe UI', Calibri, sans-serif;
+    margin: 0;
+    padding: 0;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    color: #333;
+    font-size: 18px;
+    line-height: 1.6;
+}
+
+/* Responsive container */
+.container {
+    width: 90%;
+    max-width: 900px;
+    margin: 20px auto;
+    padding: 0;
+    background-color: #fff;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+/* Section Styles */
+main {
+    padding: 0;
+}
+
+section {
+    margin-bottom: 0;
+    padding: 30px 40px;
+}
+
+.introduction, .search-section, .upload-section, .contact {
+    padding: 30px 40px;
+    border-bottom: 1px solid #e8e8e8;
+}
+
+.introduction {
+    background-color: #fff;
+    text-align: center;
+}
+
+
+h1 {
+    text-align: center;
+    font-size: 2.5em;
+    margin-top: 0px;
+    margin-bottom: 10px;
+    color: #23415A;
+    font-weight: 600;
+}
+
+h2 {
+    text-align: center;
+    font-size: 1.5em;
+    color: #23415A;
+    margin-bottom: 20px;
+    font-weight: 500;
+}
+
+.tooltip-text {
+    line-height: 1.8;
+    text-align: justify;
+}
+
+/* Link Styles */
+a {
+    color: #4682B4;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+a:hover {
+    color: #23415A;
+    text-decoration: underline;
+}
+
+/* Image Styles */
+.image-container {
+    text-align: center;
+    margin: 30px 0;
+}
+
+.image-container img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* Search Section */
+.search-section {
+    background-color: #f8f9fa;
+}
+
+.search-section h2 {
+    margin-top: 0;
+}
+
+/* Contact Section */
+.contact {
+    background-color: #f8f9fa;
+}
+
+.contact-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.contact-info, .contact-logo {
+    margin-bottom: 0px;
+    text-align: center;
+}
+
+/* Button Styles */
+.btn-submit {
+    background: linear-gradient(135deg, #23415A 0%, #2c5a7a 100%);
+    color: #fff;
+    border: none;
+    padding: 12px 24px;
+    font-size: 1em;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    font-weight: 500;
+    box-shadow: 0 4px 12px rgba(35, 65, 90, 0.2);
+}
+
+.btn-submit:hover {
+    background: linear-gradient(135deg, #2c5a7a 0%, #4682B4 100%);
+    box-shadow: 0 6px 16px rgba(35, 65, 90, 0.3);
+    transform: translateY(-2px);
+}
+
+.btn-submit:disabled {
+    background: linear-gradient(135deg, #888 0%, #999 100%);
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+}
+
+/* Form Styles */
+.input-file {
+    width: 70%;
+    margin-bottom: 20px;
+    margin-right: 20px;
+    font-size: 1em;
+    padding: 10px;
+    border: 2px dashed #4682B4;
+    border-radius: 8px;
+    background-color: #f8f9fa;
+    cursor: pointer;
+}
+
+.input-file:hover {
+    background-color: #e9ecef;
+    border-color: #23415A;
+}
+
+.input-select {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 10px;
+    font-size: 1em;
+    border: 2px solid #4682B4;
+    border-radius: 8px;
+    background-color: #fff;
+    color: #333;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.input-select:hover {
+    border-color: #23415A;
+    box-shadow: 0 2px 8px rgba(70, 130, 180, 0.2);
+}
+
+.input-select:focus {
+    outline: none;
+    border-color: #23415A;
+    box-shadow: 0 0 0 3px rgba(70, 130, 180, 0.1);
+}
+
+/* Progress Bar Styles */
+#progressContainer {
+    margin-top: 20px;
+    padding: 20px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+}
+
+#progressText {
+    margin-bottom: 10px;
+    font-weight: 500;
+    color: #23415A;
+}
+
+#progressBar {
+    transition: width 0.3s ease;
+    font-weight: 500;
+}
+
+/* Contact logo image */
+.contact-logo img {
+    max-width: 200px;
+    height: auto;
+}
+
+.header-logo {
+    max-width: 150px;
+    margin-bottom: 0px;
+}
+
+/* Error message styles */
+.error-message {
+    margin-top: 10px;
+    padding: 15px;
+    background-color: #f8d7da;
+    color: #721c24;
+    border-radius: 8px;
+    border: 1px solid #f5c6cb;
+}
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+    .container {
+        width: 95%;
+        margin: 10px auto;
+        border-radius: 8px;
+    }
+
+    section {
+        padding: 20px 20px;
+    }
+    
+    .introduction, .search-section, .upload-section, .contact {
+        padding: 20px 20px;
+    }
+
+    h1 {
+        font-size: 2em;
+    }
+
+    h2 {
+        font-size: 1.3em;
+    }
+
+    .btn-submit {
+        font-size: 0.95em;
+        padding: 10px 20px;
+    }
+}
