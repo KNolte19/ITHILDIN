@@ -87,8 +87,8 @@ ithildin_wing_analysis/
 
 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/KNolte19/ithildin_wing_analysis.git
-   cd ithildin_wing_analysis
+   git clone https://github.com/KNolte19/ITHILDIN.git
+   cd ITHILDIN
    ```
 
 2. **Install Python dependencies**:
