@@ -12,7 +12,7 @@ Diptera represent one of the most diverse insect orders, including species with 
 
 <p align="left">
   <img src="./static/images/workflow.jpg" width="1200">
-</p>wow
+</p>
 
 
 ## Features
