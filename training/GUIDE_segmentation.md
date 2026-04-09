@@ -72,7 +72,7 @@ training/
     python training/train_segment_model_local.py
     ```
 
-Colab Links:
+Alternatively you can also use the Colab notebook for training the segmentattion model. We provided the already generated arrays and pretrained models in the Google Drive folder, so you can directly run the training cells without having to prepare your own data first. 
 - [Train Segmentation Model](https://drive.google.com/drive/folders/1_rAI4mhnU5WG1cFDbFC4SGefEG_6-bmL?usp=share_link)
 
 ---
