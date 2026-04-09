@@ -31,12 +31,12 @@ import torch.nn as nn
 # ============================================================================
 
 # Experiment Settings
-EXPERIMENT = "data_droso"  # Your experiment name
-DATA_PATH = "./training/data_droso"  # Path to training data directory
+EXPERIMENT = "example"  # Your experiment name
+DATA_PATH = "./training/{}/".format(EXPERIMENT)  # Path to training data directory
 
 # Training Hyperparameters
-LEARNING_RATE = 1e-3  # Initial learning rate
-EPOCHS = 2  # Number of training epochs
+LEARNING_RATE = 1e-4  # Initial learning rate
+EPOCHS = 16  # Number of training epochs
 BATCH_SIZE = 8  # Batch size for training
 IMAGE_SIZE = 640  # Input image size (square)
 
@@ -55,8 +55,12 @@ FOLD = 0  # Which fold to train on (0 to K_FOLDS-1)
 PRETRAINED_BOOL = False  # Whether to use pretrained weights
 PRETRAINED_MODEL_PATH = None  # Path to pretrained model (if PRETRAINED_BOOL is True)
 
+# Example if you want to use pretrained weights from a previous fold:
+# PRETRAINED_BOOL = True
+# PRETRAINED_MODEL_PATH = "./training/example/segmentation_weights_fold-0.pth"
+
 # Output Settings
-OUTPUT_DIR = "./training/data_droso"  # Directory to save trained models
+OUTPUT_DIR = "./training/{}/".format(EXPERIMENT)  # Directory to save trained models
 
 # Hardware Settings
 DEVICE = None  # Will auto-detect if None (cuda/mps/cpu)
@@ -319,23 +323,106 @@ if SHOW_PREVIEW or SAVE_PREVIEW:
 # MODEL ARCHITECTURE
 # ============================================================================
 
-def get_model():
-    """Create and return the segmentation model."""
-    # Create base UNet++ model
+class AddCoords(nn.Module):
+    """
+    A layer that appends normalized x and y coordinate channels (and optionally a radial channel)
+    to the input tensor for CoordConv operations.
+    """
+    def __init__(self, with_r=False):
+        """
+        Args:
+            with_r (bool): Whether to include a radial distance channel sqrt(x^2 + y^2).
+        """
+        super(AddCoords, self).__init__()
+        self.with_r = with_r
+
+    def forward(self, input_tensor):
+        """
+        Args:
+            input_tensor (Tensor): Input of shape (B, C, H, W)
+
+        Returns:
+            Tensor: Output tensor with added coordinate channels.
+        """
+        batch_size, _, height, width = input_tensor.size()
+
+        # Generate normalized x and y coordinates in range [-1, 1]
+        xx_channel = torch.arange(width).repeat(1, height, 1)
+        yy_channel = torch.arange(height).repeat(1, width, 1).transpose(1, 2)
+
+        xx_channel = xx_channel.float() / (width - 1)
+        yy_channel = yy_channel.float() / (height - 1)
+
+        xx_channel = xx_channel * 2 - 1  # Normalize to [-1, 1]
+        yy_channel = yy_channel * 2 - 1
+
+        # Expand to batch size and add channel dimension
+        xx_channel = xx_channel.repeat(batch_size, 1, 1, 1).to(input_tensor.device)
+        yy_channel = yy_channel.repeat(batch_size, 1, 1, 1).to(input_tensor.device)
+
+        # Concatenate coordinates with input
+        coords = torch.cat([input_tensor, xx_channel, yy_channel], dim=1)
+
+        # Optionally add radial distance channel
+        if self.with_r:
+            rr = torch.sqrt(xx_channel ** 2 + yy_channel ** 2)
+            coords = torch.cat([coords, rr], dim=1)
+
+        return coords
+
+
+class CoordConvUnet(nn.Module):
+    """
+    A wrapper around a segmentation model that adds CoordConv channels to the input.
+    """
+    def __init__(self, base_model):
+        """
+        Args:
+            base_model (nn.Module): A segmentation model (e.g., Unet++) with in_channels=3.
+        """
+        super().__init__()
+        self.addcoords = AddCoords(with_r=False)
+        self.base_model = base_model
+
+    def forward(self, x):
+        """
+        Args:
+            x (Tensor): Input tensor of shape (B, 1, H, W) — original image.
+
+        Returns:
+            Tensor: Segmentation output from base model.
+        """
+        x = self.addcoords(x)  # Add x and y coord channels to input
+        return self.base_model(x)
+
+
+def get_model(model_path=PRETRAINED_MODEL_PATH, pretrained=True):
+    """
+    Instantiates the CoordConv-enhanced Unet++ segmentation model,
+    loads pretrained weights, and returns it.
+
+    Returns:
+        nn.Module: Fully constructed segmentation model.
+    """
+    # Create the base Unet++ model with EfficientNet-b0 encoder
     base_model = smp.UnetPlusPlus(
         encoder_name="efficientnet-b0",
-        encoder_weights="imagenet" if not PRETRAINED_BOOL else None,
-        in_channels=1,  # Grayscale input
-        classes=1  # Binary segmentation
+        encoder_weights="imagenet",
+        in_channels=3,  # 1 channel image + 2 coord channels
+        classes=1       # Binary segmentation output
     )
 
-    model = base_model
+    # Wrap with CoordConv layer
+    model = CoordConvUnet(base_model).to(DEVICE)
+
+    if pretrained:
+        # Load pretrained weights
+        model.load_state_dict(torch.load(model_path, map_location=DEVICE))
 
     return model
 
-
 print("\nCreating segmentation model...")
-model = get_model().to(DEVICE)
+model = get_model(model_path=PRETRAINED_MODEL_PATH, pretrained=PRETRAINED_BOOL).to(DEVICE)
 
 if PRETRAINED_BOOL and PRETRAINED_MODEL_PATH and os.path.exists(PRETRAINED_MODEL_PATH):
     print(f"Loading pretrained weights from: {PRETRAINED_MODEL_PATH}")

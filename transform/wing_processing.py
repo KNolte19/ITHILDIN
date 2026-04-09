@@ -145,7 +145,7 @@ def repair_skeleton(skeleton, pt1, pt2, segmentation_logit, coordinate_set, skel
     Returns:
         (np.ndarray, RepairStatus): Updated skeleton and status.
     """
-    epsilon = 1
+    epsilon = 0.1
     scaled = (segmentation_logit - segmentation_logit.min()) / (segmentation_logit.max() - segmentation_logit.min())
     cost_map = 1.0 / (scaled + epsilon)
 

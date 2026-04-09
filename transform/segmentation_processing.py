@@ -45,7 +45,7 @@ def skeletonize(segmentation: np.ndarray) -> np.ndarray:
     skeleton = pcv.morphology.skeletonize(np.squeeze(cleaned))
 
     # Prune small branches from the skeleton
-    pruned_skeleton = pcv.morphology.prune(skel_img=skeleton, size=100)[0]
+    pruned_skeleton = pcv.morphology.prune(skel_img=skeleton, size=50)[0]
 
     return pruned_skeleton
 

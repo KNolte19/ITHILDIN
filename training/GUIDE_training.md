@@ -16,22 +16,23 @@ We provide **four training scripts** in two versions each:
 
 ## Quick Start Guides
 
-### Option 1: Local Training (Python Scripts)
-
 **Prerequisites:**
 - Python 3.8+
-- PyTorch with CUDA support (recommended)
 - Required packages: `pip install -r requirements.txt`
 
-**Steps:**
+### Step 1: Prepare Your Data
+- Follow the instructions in `GUIDE_landmarks.md` to prepare your landmark training data
+- Follow the instructions in `GUIDE_segmentation.md` to prepare your segmentation training data
 
-1. **Prepare your data** using the data generation scripts (see main README.md)
+We provide a small sample dataset in `training/example/` for testing the training scripts before using your own data. The data generation scripts will create the necessary .npy files in the correct format. Make sure to run those scripts first and verify the output files are created in `training/example/` before proceeding with training. Please note that the sample dataset is very small and is only meant for testing the training pipeline, so don't expect good performance from models trained on this data. It's just to ensure that the training scripts are working correctly with the expected input format.
 
-2. **Edit the configuration section** at the top of the scripts:
+### Option 1: Local Training (Python Scripts)
+
+1. **(Optional) Edit the configuration section** at the top of the scripts:
    - `train_landmark_model_local.py` for landmark model
    - `train_segment_model_local.py` for segmentation model
 
-3. **Run the script:**
+2. **Run the script:**
    ```bash
    cd training
 
@@ -43,9 +44,9 @@ We provide **four training scripts** in two versions each:
 
    ```
 
-4. **Monitor training** - Progress and metrics will be printed to console
+3. **Monitor training** - Progress and metrics will be printed to console
 
-5. **Find your models** in `./training/models/` directory
+4. **Find your models** in `./training/example/` directory
 
 ### Option 2: Google Colab Training (Notebooks)
 
@@ -58,7 +59,7 @@ We provide **four training scripts** in two versions each:
 
 1. **Upload to Colab:**
    - Upload `train_landmark_model_colab.ipynb` or `train_segment_model_colab.ipynb` to Google Colab
-   - Or open directly from Google Drive
+   - Upload the .npy training data files generated from the data preparation scripts to your Google Drive
 
 2. **Enable GPU:**
    - Go to: Runtime > Change runtime type
@@ -67,7 +68,7 @@ We provide **four training scripts** in two versions each:
 
 3. **Edit Configuration:**
    - Find the "Configuration Parameters" section
-   - Update the `path` variable to your Google Drive location
+   - Update the paths to your Google Drive location
    - Adjust other parameters as needed
 
 4. **Run All Cells:**
@@ -78,37 +79,11 @@ We provide **four training scripts** in two versions each:
    - Watch the training metrics in the output
    - Models are automatically saved to your specified Google Drive path
 
-
-## Data Requirements
-
-### Landmark Model
-
-**Directory Structure:**
-```
-training/
-  └── data/
-      └── traindata/
-          ├── forlandmark_{EXPERIMENT}_images.npy
-          ├── forlandmark_{EXPERIMENT}_heatmap.npy
-          └── forlandmark_{EXPERIMENT}_paths.npy
-```
-
-### Segmentation Model
-
-**Directory Structure:**
-```
-training/
-  └── data/
-      ├── image_forsegment.npy
-      └── segment_forsegment.npy
-```
-
-
 ## Output Files
 
 ### Landmark Model Outputs
 
-Located in `OUTPUT_DIR` (default: `./training/models/`):
+Located in `OUTPUT_DIR` (default: `./training/example/`):
 
 - `landmark_fold-{FOLD}_{EXPERIMENT}.pth` - Full model (for inference)
 - `landmark_weights_fold-{FOLD}_{EXPERIMENT}.pth` - Model weights only (for transfer learning)
@@ -118,7 +93,7 @@ Located in `OUTPUT_DIR` (default: `./training/models/`):
 
 ### Segmentation Model Outputs
 
-Located in `OUTPUT_DIR` (default: `./training/models/`):
+Located in `OUTPUT_DIR` (default: `./training/example/`):
 
 - `segmentation_fold-{FOLD}.pth` - Full model
 - `segmentation_weights_fold-{FOLD}.pth` - Model weights only
@@ -147,7 +122,7 @@ BATCH_SIZE = 2  # Instead of 4 or 8
 - Ensure GPU is being used (check "Using cuda device" message)
 - For Colab: Enable GPU runtime
 - Increase `NUM_WORKERS` for local training
-- Reduce `NUM_WORKERS` to 2 for Colab
+- Reduce `NUM_WORKERS` to 12 for Colab
 
 #### "RuntimeError: CUDA error: device-side assert triggered"
 **Solution**: This usually means data dimensions don't match. I would recommend you debug on cpu.
@@ -158,19 +133,11 @@ BATCH_SIZE = 2  # Instead of 4 or 8
 
 For landmark model:
 ```python
-PRETRAINED_MODEL_PATH = "/path/to/segmentation_weights_fold-1.pth"
+PRETRAINED_MODEL_PATH = "training/models_mosquito/mosquito_landmark_weights_fold-1.pth"
 ```
 
 For segmentation model:
 ```python
 PRETRAINED_BOOL = True
-PRETRAINED_MODEL_PATH = "/path/to/weights.pth"
+PRETRAINED_MODEL_PATH = "training/models_mosquito/mosquito_segmentation_weights_fold-1.pth"
 ```
-
-## Related Documentation
-
-- **Main README**: `../README.md` - Project overview
-- **Data Generation**: `./README.md` - How to prepare training data
-- **Checklists**: 
-  - `CHECKLIST_landmarks.md` - Landmark data preparation
-  - `CHECKLIST_segmentation.md` - Segmentation data preparation

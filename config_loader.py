@@ -26,9 +26,9 @@ MOSQUITO_CONFIG = {
     "landmark_image_size": (480, 240),
     "classifier_image_size": (480, 240),
     "model_paths": {
-        "segmentation": "training/models/segmentation_weights_fold-1.pth",
-        "landmark": "training/models/landmark_weights_fold-1_development.pth",
-        "classification": "training/models/classifier_1_evaluation.pth"
+        "segmentation": "training/models_mosquito/mosquito_segmentation_weights_fold-1.pth",
+        "landmark": "training/models_mosquito/mosquito_landmark_weights_fold-1.pth",
+        "classification": "training/models_mosquito/mosquito_classifier_1_evaluation.pth"
     },
     "N_landmarks": 17,
     "N_semilandmarks": 52,
@@ -99,9 +99,9 @@ DROSOPHILA_CONFIG = {
     "landmark_image_size": (480, 240),
     "classifier_image_size": (480, 240),
     "model_paths": {
-        "segmentation": "training/models_droso/drosophila_segmentation_weights_fold-0.pth",
-        "landmark": "training/models_droso/landmark_weights_fold-0_Drosophila.pth",
-        "classification": "training/models/classifier_1_evaluation.pth"
+        "segmentation": "training/models_drosophila/drosophila_segmentation_weights_fold-0.pth",
+        "landmark": "training/models_drosophila/drosophila_landmark_weights_fold-0.pth",
+        "classification": "training/models_mosquito/mosquito_classifier_1_evaluation.pth" # Placeholder, not used 
     },
     "N_landmarks": 14,
     "N_semilandmarks": 26,
@@ -141,7 +141,7 @@ TSETSE_CONFIG = {
     "model_paths": {
         "segmentation": "training/models_tsetse/tsetse_segmentation_weights_fold-0.pth",
         "landmark": "training/models_tsetse/tsetse_landmark_weights_fold-0.pth",
-        "classification": "training/models/classifier_1_evaluation.pth",
+        "classification": "training/models_mosquito/mosquito_classifier_1_evaluation.pth", # Placeholder, not used 
     },
     "N_landmarks": 11,
     "N_semilandmarks": 12,

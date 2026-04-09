@@ -33,16 +33,16 @@ import segmentation_models_pytorch as smp
 # ============================================================================
 
 # Experiment Settings
-EXPERIMENT = "data_droso"  # Experiment name (should match data directory)
-DATA_PATH = "./training/data_droso/"  # Path to training data directory (relative to repo root)
+EXPERIMENT = "example"  # Experiment name (should match data directory)
+DATA_PATH = "./training/example/"  # Path to training data directory (relative to repo root)
 
 # Model Architecture Parameters
 N_LANDMARKS = 15  # Number of landmarks to detect
 HG_BLOCKS = 4  # Number of Hourglass blocks
 
 # Training Hyperparameters
-LEARNING_RATE = 5e-4  # Initial learning rate
-EPOCHS = 2  # Number of training epochs
+LEARNING_RATE = 1e-4  # Initial learning rate
+EPOCHS = 16  # Number of training epochs
 BATCH_SIZE = 4  # Batch size for training
 IMAGE_HEIGHT, IMAGE_WIDTH = 240, 480  # Input image dimensions
 
@@ -50,16 +50,16 @@ IMAGE_HEIGHT, IMAGE_WIDTH = 240, 480  # Input image dimensions
 ALPHA = 0.5  # Weight balance between different loss components
 
 # Learning Rate Scheduler Parameters
-WARMUP_EPOCHS = None  # Will be auto-calculated as 25% of total epochs if None
-WARMUP_FACTOR = 0.1  # Starting learning rate multiplier for warmup
+WARMUP_EPOCHS = 8  # Will be auto-calculated as 25% of total epochs if None
+WARMUP_FACTOR = 0.05  # Starting learning rate multiplier for warmup
 
 # Cross-Validation Settings
 K_FOLDS = 5  # Number of folds for cross-validation
-FOLD = 4  # Which fold to train on (0 to K_FOLDS-1)
+FOLD = 0  # Which fold to train on (0 to K_FOLDS-1)
 
 # Model Paths
-PRETRAINED_MODEL_PATH = None  # Path to pretrained segmentation model weights (None to skip)
-OUTPUT_DIR = "./training/data_droso/"  # Directory to save trained models
+PRETRAINED_SEGMENT_MODEL_PATH = "./training/models_mosquito/mosquito_segmentation_weights_fold-1.pth"  # Path to pretrained segmentation model weights (None to skip)
+OUTPUT_DIR = "./training/example/"  # Directory to save trained models
 
 # Hardware Settings
 DEVICE = None  # Will auto-detect if None (cuda/mps/cpu)
@@ -475,7 +475,6 @@ class Hourglass(nn.Module):
 
         return x
 
-
 # ============================================================================
 # LOSS FUNCTION
 # ============================================================================
@@ -615,20 +614,112 @@ def apply_albumentations_batch_simple(batch_tensor: torch.Tensor, transform):
 
 print("\nLoading segmentation model...")
 
-# Create segmentation model
-segmentation_model = smp.UnetPlusPlus(
-    encoder_name="efficientnet-b0",
-    encoder_weights="imagenet",
-    in_channels=1,
-    classes=1
-).to(DEVICE)
+class AddCoords(nn.Module):
+    """
+    A layer that appends normalized x and y coordinate channels (and optionally a radial channel)
+    to the input tensor for CoordConv operations.
+    """
+    def __init__(self, with_r=False):
+        """
+        Args:
+            with_r (bool): Whether to include a radial distance channel sqrt(x^2 + y^2).
+        """
+        super(AddCoords, self).__init__()
+        self.with_r = with_r
 
-# Load pretrained weights if specified
-if PRETRAINED_MODEL_PATH and os.path.exists(PRETRAINED_MODEL_PATH):
-    print(f"Loading pretrained weights from: {PRETRAINED_MODEL_PATH}")
-    segmentation_model.load_state_dict(torch.load(PRETRAINED_MODEL_PATH, map_location=DEVICE))
-else:
-    print("No pretrained weights specified or file not found, using ImageNet initialization")
+    def forward(self, input_tensor):
+        """
+        Args:
+            input_tensor (Tensor): Input of shape (B, C, H, W)
+
+        Returns:
+            Tensor: Output tensor with added coordinate channels.
+        """
+        batch_size, _, height, width = input_tensor.size()
+
+        # Generate normalized x and y coordinates in range [-1, 1]
+        xx_channel = torch.arange(width).repeat(1, height, 1)
+        yy_channel = torch.arange(height).repeat(1, width, 1).transpose(1, 2)
+
+        xx_channel = xx_channel.float() / (width - 1)
+        yy_channel = yy_channel.float() / (height - 1)
+
+        xx_channel = xx_channel * 2 - 1  # Normalize to [-1, 1]
+        yy_channel = yy_channel * 2 - 1
+
+        # Expand to batch size and add channel dimension
+        xx_channel = xx_channel.repeat(batch_size, 1, 1, 1).to(input_tensor.device)
+        yy_channel = yy_channel.repeat(batch_size, 1, 1, 1).to(input_tensor.device)
+
+        # Concatenate coordinates with input
+        coords = torch.cat([input_tensor, xx_channel, yy_channel], dim=1)
+
+        # Optionally add radial distance channel
+        if self.with_r:
+            rr = torch.sqrt(xx_channel ** 2 + yy_channel ** 2)
+            coords = torch.cat([coords, rr], dim=1)
+
+        return coords
+
+
+class CoordConvUnet(nn.Module):
+    """
+    A wrapper around a segmentation model that adds CoordConv channels to the input.
+    """
+    def __init__(self, base_model):
+        """
+        Args:
+            base_model (nn.Module): A segmentation model (e.g., Unet++) with in_channels=3.
+        """
+        super().__init__()
+        self.addcoords = AddCoords(with_r=False)
+        self.base_model = base_model
+
+    def forward(self, x):
+        """
+        Args:
+            x (Tensor): Input tensor of shape (B, 1, H, W) — original image.
+
+        Returns:
+            Tensor: Segmentation output from base model.
+        """
+        x = self.addcoords(x)  # Add x and y coord channels to input
+        return self.base_model(x)
+
+
+def get_segmentation_model(model_path=PRETRAINED_MODEL_PATH, pretrained=True):
+    """
+    Instantiates the CoordConv-enhanced Unet++ segmentation model,
+    loads pretrained weights, and returns it.
+
+    Returns:
+        nn.Module: Fully constructed segmentation model.
+    """
+    # Create the base Unet++ model with EfficientNet-b0 encoder
+    base_model = smp.UnetPlusPlus(
+        encoder_name="efficientnet-b0",
+        encoder_weights="imagenet",
+        in_channels=3,  # 1 channel image + 2 coord channels
+        classes=1       # Binary segmentation output
+    )
+
+    # Wrap with CoordConv layer
+    segmentation_model = CoordConvUnet(base_model).to(DEVICE)
+
+    if pretrained:
+        # Load pretrained weights
+        segmentation_model.load_state_dict(torch.load(model_path, map_location=DEVICE))
+
+    return segmentation_model
+
+print("\nCreating segmentation model...")
+segmentation_model = get_segmentation_model(model_path=PRETRAINED_SEGMENT_MODEL_PATH, pretrained=PRETRAINED_BOOL).to(DEVICE)
+
+if PRETRAINED_BOOL and PRETRAINED_SEGMENT_MODEL_PATH and os.path.exists(PRETRAINED_SEGMENT_MODEL_PATH):
+    print(f"Loading pretrained weights from: {PRETRAINED_SEGMENT_MODEL_PATH}")
+    segmentation_model.load_state_dict(torch.load(PRETRAINED_SEGMENT_MODEL_PATH, map_location=DEVICE))
+
+print(f"Model created with {sum(p.numel() for p in segmentation_model.parameters())} parameters")
 
 segmentation_model.eval()
 

@@ -141,12 +141,6 @@ def run_prediction(file, save_path="test", family="mosquito", timing_info=None, 
     # Step 6: Re-extract if skeleton was repaired
     step_start = time.time()
     if status == "Repaired":
-        junctions_coord = segmentation_processing.extract_junction_coordinates(
-            repaired_skeleton
-        )
-        consensus_coord = landmark_processing.consensus_coordinates(
-            landmarks_coord, junctions_coord, repaired_skeleton
-        )
         repaired_skeleton, _, failed_coord = wing_processing.check_skeleton(
             repaired_skeleton, consensus_coord, segmentation_logit
         )

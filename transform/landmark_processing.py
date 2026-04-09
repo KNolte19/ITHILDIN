@@ -122,7 +122,7 @@ def consensus_coordinates(
         np.ndarray: Shape (2, N) with consensus coordinates.
                     Row 0 = X coordinates, Row 1 = Y coordinates.
     """
-    threshold = 0.1
+    threshold = 0.05
     large_number = 1e9
 
     # Compute weighted distances (2x weight for x-axis)
