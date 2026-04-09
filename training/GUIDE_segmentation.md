@@ -25,7 +25,7 @@ Use this checklist to ensure you have everything ready before running the script
 - [ ] Confirm that `training/{experiment}/segmentation/image_processed/` contains processed images
 
 ### Step 2: Annotate Processed Images
-
+You can skip this process for the example dataset since we have included sample segmentation masks, but for your own data you will need to create segmentation masks for each processed image.
 - [ ] Use an annotation tool (e.g., **Label Studio**, **napari-convpaint**) to create segmentation masks for each processed image in `image_processed/`
 - [ ] Save the segmentation masks as PNG files with the **same filenames** as the processed images
 - [ ] Place the masks in: `training/{experiment}/segmentation/segmentation_fromannotator/`
@@ -34,7 +34,7 @@ Use this checklist to ensure you have everything ready before running the script
 ### Example Structure
 ```
 training/
-  └── my_dataset/
+  └── example/
       └── segmentation/
           ├── image_raw/
           │   ├── image001.jpg
@@ -54,7 +54,7 @@ training/
 
 - [ ] Run the script to generate the .npy arrays for training:
     ```bash
-    python generate_segmentation_data.py --experiment my_dataset --arrays-only
+    python generate_segmentation_data.py --experiment example --arrays-only
     ```
 - [ ] Confirm that the following files exist in `training/{experiment}/`:
   - [ ] `path_forsegment.npy`
@@ -65,15 +65,12 @@ training/
 
 ---
 
-## Ready to Train the Segmentation Model?
-
-Next steps:
-1. Navigate to the `training/` folder
-2. Open the appropriate training notebook or use the colab links:
-   - `train_segment_model.ipynb` for segmentation
-   - `train_landmark_model.ipynb` for landmarks
-3. Update the notebook to use your experiment name
-4. Run the training!
+## Train the Segmentation Model
+1. Update the script to use your experiment name if you are not using the experiment
+2. Run the appropriate training script or use the colab link:
+    ```bash
+    python training/train_segment_model_local.py
+    ```
 
 Colab Links:
 - [Train Segmentation Model](https://drive.google.com/drive/folders/1_rAI4mhnU5WG1cFDbFC4SGefEG_6-bmL?usp=share_link)

@@ -321,7 +321,7 @@ def create_heatmap_from_coords(landmark,
     return stacked_heatmap
 
 
-def create_landmark_heatmap(file_path, X, Y, radius=3, flipped=False, background_padding=0):
+def create_landmark_heatmap(file_path, X, Y, radius=3, flipped=False, background_padding=0, EXPERIMENT="example"):
     if flipped:
         image_raw = np.fliplr(robust_load_image(file_path))
     else:
@@ -353,8 +353,8 @@ def create_landmark_heatmap(file_path, X, Y, radius=3, flipped=False, background
     landmark_arr = np.asarray(landmark_ls)
     landmark_heatmap = create_heatmap_from_coords(landmark_arr, N_landmarks=len(X))
 
-    save_path_coords = os.path.join("training", "data", "landmark", "landmark_heatmaps", file_path.split(os.sep)[-1].split(".")[0] + "_coords.npy")
-    save_path_heatmap = os.path.join("training", "data", "landmark", "landmark_heatmaps", file_path.split(os.sep)[-1].split(".")[0] + "_map.npy")
+    save_path_coords = os.path.join("training", EXPERIMENT, "landmark", "landmark_heatmaps", file_path.split(os.sep)[-1].split(".")[0] + "_coords.npy")
+    save_path_heatmap = os.path.join("training", EXPERIMENT, "landmark", "landmark_heatmaps", file_path.split(os.sep)[-1].split(".")[0] + "_map.npy")
 
     np.save(save_path_coords, landmark_arr)
     np.save(save_path_heatmap, landmark_heatmap)

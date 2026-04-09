@@ -8,7 +8,7 @@ Use this checklist to ensure you have everything ready before running the script
 
 - [ ] I have raw wing images in a supported format (JPG, PNG, TIFF)
 - [ ] I have a CSV file with landmark annotations (see below)
-- [ ] I know how many landmarks per image (e.g., 11 or 14)
+- [ ] I know how many landmarks per image 
 - [ ] I have chosen a name for my experiment (e.g., "example")
 
 ### CSV File Requirements
@@ -47,9 +47,8 @@ training/
 
 - [ ] Run the image processing script to align and normalize images:
     ```bash
-    python training/generate_landmark_data.py --experiment example --n-landmarks 11 --process-only
+    python training/generate_landmark_data.py --experiment example --n-landmarks 15 --process-only
     ```
-    *(Replace `11` with your actual number of landmarks)*
 
 - [ ] Confirm that `training/example/landmark/image_processed/` contains processed images
 
@@ -62,9 +61,8 @@ training/
 
 - [ ] Run the script to generate the .npy arrays for training:
     ```bash
-    python training/generate_landmark_data.py --experiment example --n-landmarks 11 --arrays-only
+    python training/generate_landmark_data.py --experiment example --n-landmarks 15 --arrays-only
     ```
-    *(Replace `11` with your actual number of landmarks)*
 
 - [ ] Confirm that the following files exist in `training/example/`:
   - [ ] `forlandmark_example_paths.npy`
@@ -92,7 +90,7 @@ If the script reports errors, check:
 
 ### Format Errors
 - [ ] Images are in supported formats
-- [ ] CSV is properly formatted (no missing commas)
+- [ ] CSV is properly formatted (no missing commas), file should be semicolon `;` separated and not tab or comma separated
 - [ ] Coordinate columns are named correctly
 
 ### Memory Errors
@@ -102,14 +100,12 @@ If the script reports errors, check:
 
 ---
 
-## Ready to Train the Landmark Model?
-Next steps:
-1. Navigate to the `training/` folder or use the colab links
-2. Open the appropriate training notebook:
-   - `train_landmark_model.ipynb` for landmarks
-3. Update the notebook to use your experiment name and landmark count
-4. Run the training!
-
+## Train the Landmark Model
+1. Update the script to use your experiment name if you are not using the experiment
+2. Run the appropriate training script or use the colab link:
+    ```bash
+    python training/train_landmark_model_local.py
+    ```
 Colab Links:
 - [Train Landmark Model](https://drive.google.com/drive/folders/1_rAI4mhnU5WG1cFDbFC4SGefEG_6-bmL?usp=share_link)
 

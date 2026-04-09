@@ -58,16 +58,15 @@ K_FOLDS = 5  # Number of folds for cross-validation
 FOLD = 0  # Which fold to train on (0 to K_FOLDS-1)
 
 # Model Paths
+PRETRAINED_BOOL = True
 PRETRAINED_SEGMENT_MODEL_PATH = "./training/models_mosquito/mosquito_segmentation_weights_fold-1.pth"  # Path to pretrained segmentation model weights (None to skip)
 OUTPUT_DIR = "./training/example/"  # Directory to save trained models
-
-# Hardware Settings
-DEVICE = None  # Will auto-detect if None (cuda/mps/cpu)
 
 # Visualization Settings
 SHOW_PREVIEW = False  # Set to True to display training data preview
 SAVE_PREVIEW = True  # Set to True to save preview images
 
+DEVICE = None  # Device to use for training (auto-detect if None)
 # ============================================================================
 # SETUP
 # ============================================================================
@@ -83,6 +82,10 @@ if DEVICE is None:
         else "mps" if torch.backends.mps.is_available()
         else "cpu"
     )
+
+DEVICE = "cpu"
+torch.device(DEVICE)
+
 print(f"Using {DEVICE} device")
 
 # Create output directory if it doesn't exist
@@ -245,8 +248,8 @@ class CustomDataset(Dataset):
 
         # Smooth Landmarks and weights with gaussian blur
         # gaussian_blur accepts (C,H,W) tensors
-        heatmap = TF.gaussian_blur(heatmap, kernel_size=(5, 5), sigma=(13.0,))
-        weight = TF.gaussian_blur(weight, kernel_size=(5, 5), sigma=(13.0,))
+        heatmap = TF.gaussian_blur(heatmap, kernel_size=(7, 7), sigma=(13.0,))
+        weight = TF.gaussian_blur(weight, kernel_size=(7, 7), sigma=(13.0,))
 
         # Grayscale + CLAHE transform (returns (H, W))
         image = torch.clamp(image, min=0.0, max=1.0)
@@ -687,7 +690,7 @@ class CoordConvUnet(nn.Module):
         return self.base_model(x)
 
 
-def get_segmentation_model(model_path=PRETRAINED_MODEL_PATH, pretrained=True):
+def get_segmentation_model(model_path=PRETRAINED_SEGMENT_MODEL_PATH, pretrained=True):
     """
     Instantiates the CoordConv-enhanced Unet++ segmentation model,
     loads pretrained weights, and returns it.

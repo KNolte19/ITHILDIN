@@ -12,3 +12,4 @@ analysis/temp/input.csv
 analysis/temp/output.csv
 /static/requests
 *.json
+/ithildin_env

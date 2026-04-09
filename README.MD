@@ -139,12 +139,13 @@ Key settings in `config_loader.py`:
 - **Species List**: Classifier output labels
 - **Device**: CPU, CUDA, or MPS (Apple Silicon)
 
-## Landmark Reference
+## Landmark Reference and addding new families
 
 The system detects fixed anatomical landmarks on mosquito wings following standard protocols. Semilandmarks are automatically placed along wing veins between fixed landmarks according to the topology defined in `config_loader.py`.
 
 See `config_loader.py` for the complete landmark topology definition.
 
+You can add new families by defining a new config section in `config_loader.py` and retraining the landmark model on annotated images from the new family. In the folder `training/data_preparation/` you will find a guide for preparing training data for the landmark model, including how to structure your image and annotation files, run the processing scripts, and generate the training arrays. After you train the landmark model on your new family, you have to update the configuration in `config_loader.py` by following the template of the other families. Please do not hestitate to reach out if you have any questions about the process of adding new families or preparing training data. We will be happy to help you get started with training the landmark model on your own data and adding new families to the system.
 
 ## Training Data Preparation
 

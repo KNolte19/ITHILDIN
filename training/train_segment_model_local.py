@@ -32,7 +32,7 @@ import torch.nn as nn
 
 # Experiment Settings
 EXPERIMENT = "example"  # Your experiment name
-DATA_PATH = "./training/{}/".format(EXPERIMENT)  # Path to training data directory
+DATA_PATH = "./{}/".format(EXPERIMENT)  # Path to training data directory
 
 # Training Hyperparameters
 LEARNING_RATE = 1e-4  # Initial learning rate
@@ -52,15 +52,15 @@ K_FOLDS = 5  # Number of folds for cross-validation
 FOLD = 0  # Which fold to train on (0 to K_FOLDS-1)
 
 # Model Settings
-PRETRAINED_BOOL = False  # Whether to use pretrained weights
-PRETRAINED_MODEL_PATH = None  # Path to pretrained model (if PRETRAINED_BOOL is True)
+# PRETRAINED_BOOL = False  # Whether to use pretrained weights
+# PRETRAINED_MODEL_PATH = None  # Path to pretrained model (if PRETRAINED_BOOL is True)
 
 # Example if you want to use pretrained weights from a previous fold:
-# PRETRAINED_BOOL = True
-# PRETRAINED_MODEL_PATH = "./training/example/segmentation_weights_fold-0.pth"
+PRETRAINED_BOOL = True
+PRETRAINED_MODEL_PATH = "./training/models_mosquito/mosquito_segmentation_weights_fold-1.pth"
 
 # Output Settings
-OUTPUT_DIR = "./training/{}/".format(EXPERIMENT)  # Directory to save trained models
+OUTPUT_DIR = "./{}/".format(EXPERIMENT)  # Directory to save trained models
 
 # Hardware Settings
 DEVICE = None  # Will auto-detect if None (cuda/mps/cpu)

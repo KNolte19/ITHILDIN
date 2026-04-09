@@ -213,7 +213,7 @@ def process_landmarks(experiment_name, root_path, annotations_df, n_landmarks, b
 
             # Create heatmap with padding
             landmark_arr, landmark_heatmap = landmark_processing.create_landmark_heatmap(
-                        image_path, X, Y, flipped=False, background_padding=background_padding
+                        image_path, X, Y, flipped=False, background_padding=background_padding, EXPERIMENT=experiment_name
                     )
                 
             # Save heatmap and coordinates
