@@ -10,6 +10,7 @@ Use this checklist to ensure you have everything ready before running the script
 - [ ] I have a CSV file with landmark annotations (see below)
 - [ ] I know how many landmarks per image 
 - [ ] I have chosen a name for my experiment (e.g., "example")
+- [ ] I have trained the segmentation model on my data
 
 ### CSV File Requirements
 
@@ -101,7 +102,7 @@ If the script reports errors, check:
 ---
 
 ## Train the Landmark Model
-1. Update the script to use your experiment name if you are not using the experiment
+1. Update the script to use your experiment name and provide the path to the segmentation model
 2. Run the appropriate training script or use the colab link:
     ```bash
     python training/train_landmark_model_local.py

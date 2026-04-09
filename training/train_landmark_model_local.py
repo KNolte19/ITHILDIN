@@ -59,7 +59,7 @@ FOLD = 0  # Which fold to train on (0 to K_FOLDS-1)
 
 # Model Paths
 PRETRAINED_BOOL = True
-PRETRAINED_SEGMENT_MODEL_PATH = "./training/models_mosquito/mosquito_segmentation_weights_fold-1.pth"  # Path to pretrained segmentation model weights (None to skip)
+PRETRAINED_SEGMENT_MODEL_PATH = f"./training/{EXPERIMENT}/segmentation_fold-0.pth"  # Path to pretrained segmentation model weights (None to skip)
 OUTPUT_DIR = "./training/example/"  # Directory to save trained models
 
 # Visualization Settings

@@ -92,11 +92,7 @@ Then you can install the required Python packages using pip:
    install.packages(c("geomorph", "shapes"))
    ```
 
-4. **Download pretrained models**:
-   - Place model weights in `training/models/` and `training/models_tsetse/`
-   - Update paths in `config_loader.py` if needed
-
-5. **Configure settings**:
+4. **Configure settings**:
    - Edit `config_loader.py` to set your `root_path` and `device` (cpu/cuda/mps)
 
 
@@ -110,47 +106,12 @@ python app.py
 
 Then open your browser to `http://localhost:5000`
 
+## Landmark Reference and Adding New Families
 
-### Command Line
+The system detects fixed anatomical landmarks on insect wings using an Hourglas Model. Semilandmarks are automatically placed along wing veins between fixed landmarks according to the topology defined in `config_loader.py`.
 
-Process images programmatically:
+You can add new families to the system by defining a new config family in `config_loader.py` and retraining both the segmentation and landmark model. Please refer to the training guides in `training/` for detailed instructions on preparing training data and running the training scripts. First retrain the segmentation model to segment the wings of your new family, then prepare training data for the landmark model and retrain it. The landmark model will learn to predict the fixed landmarks, and the semilandmarks will be automatically placed based on the topology defined in the config.
 
-```python
-from main import run_prediction
-import utils
-
-# Process a single image
-run_prediction("path/to/wing_image.jpg", save_path="output/result")
-
-# Batch process and generate DataFrame
-prediction_df = utils.json_to_dataframe(
-    "output/directory",
-    semilandmark=True
-)
-```
-
-### Configuration
-
-Key settings in `config_loader.py`:
-
-- **Paths**: Model locations and reference data
-- **Image Sizes**: Input dimensions for each model
-- **Landmarks**: Number and topology of landmarks/semilandmarks
-- **Species List**: Classifier output labels
-- **Device**: CPU, CUDA, or MPS (Apple Silicon)
-
-## Landmark Reference and addding new families
-
-The system detects fixed anatomical landmarks on mosquito wings following standard protocols. Semilandmarks are automatically placed along wing veins between fixed landmarks according to the topology defined in `config_loader.py`.
-
-See `config_loader.py` for the complete landmark topology definition.
-
-You can add new families by defining a new config section in `config_loader.py` and retraining the landmark model on annotated images from the new family. In the folder `training/data_preparation/` you will find a guide for preparing training data for the landmark model, including how to structure your image and annotation files, run the processing scripts, and generate the training arrays. After you train the landmark model on your new family, you have to update the configuration in `config_loader.py` by following the template of the other families. Please do not hestitate to reach out if you have any questions about the process of adding new families or preparing training data. We will be happy to help you get started with training the landmark model on your own data and adding new families to the system.
-
-## Training Data Preparation
-
-If you want to train your own models, we provide easy-to-use Python scripts for preparing training data.
-Refer to the guides in `training/` for step-by-step instructions on how to generate training datasets for segmentation, landmark detection, and classification models.
 
 ## Citation
 
