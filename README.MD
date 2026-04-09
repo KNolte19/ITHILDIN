@@ -36,7 +36,6 @@ Diptera represent one of the most diverse insect orders, including species with 
 - Python 3.8+
 - R 4.0+ with geomorph (for geometric morphometrics)
 - PyTorch 2.0+
-- CUDA (optional, for GPU acceleration)
 
 ## Usage
 
@@ -140,7 +139,7 @@ prediction_df = utils.json_to_dataframe(
 
 ### Configuration
 
-Key settings in `config.py`:
+Key settings in `config_loader.py`:
 
 - **Paths**: Model locations and reference data
 - **Image Sizes**: Input dimensions for each model
@@ -150,9 +149,9 @@ Key settings in `config.py`:
 
 ## Landmark Reference
 
-The system detects fixed anatomical landmarks on mosquito wings following standard protocols. Semilandmarks are automatically placed along wing veins between fixed landmarks according to the topology defined in `config.py`.
+The system detects fixed anatomical landmarks on mosquito wings following standard protocols. Semilandmarks are automatically placed along wing veins between fixed landmarks according to the topology defined in `config_loader.py`.
 
-See `config.py` for the complete landmark topology definition.
+See `config_loader.py` for the complete landmark topology definition.
 
 ## Models
 
