@@ -8,6 +8,7 @@ Use this checklist to ensure you have everything ready before running the script
 
 - [ ] I have raw wing images in a supported format (JPG, PNG, TIFF)
 - [ ] I have chosen a name for my experiment (in this example case we use "example")
+- [ ] You have installed the required Python packages and set up your environment according to the README instructions
 
 ### Folder Structure Setup
 

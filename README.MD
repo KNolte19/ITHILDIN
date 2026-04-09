@@ -15,20 +15,6 @@ Diptera represent one of the most diverse insect orders, including species with 
 </p>
 
 
-## Features
-
-- **Automated Image Processing**: Background removal, alignment, and normalization
-- **Deep Learning Models**:
-  - Wing segmentation (U-Net++ with CoordConv)
-  - Anatomical landmark detection
-  - Species classification (34+ mosquito species)
-
-- **Geometric Morphometrics**:
-  - Automated semilandmark placement 
-  - Linear Discriminant Analysis (LDA) for species prediction
-- **Web Interface**: Flask-based application for batch processing
-- **Comprehensive Output**: JSON results, CSV data files, and annotated images
-
 ## Installation
 
 ### Requirements
@@ -91,6 +77,12 @@ ithildin_wing_analysis/
    ```
 
 2. **Install Python dependencies**:
+Before installing, we recommend creating a virtual environment to avoid conflicts with existing packages:
+   ```bash
+   python -m venv ithildin_env
+   source ithildin_env/bin/activate  # On Windows: ithildin_env\Scripts\activate
+   ```
+Then you can install the required Python packages using pip:
    ```bash
    pip install -r requirements.txt
    ```
@@ -102,10 +94,10 @@ ithildin_wing_analysis/
 
 4. **Download pretrained models**:
    - Place model weights in `training/models/` and `training/models_tsetse/`
-   - Update paths in `config.py` if needed
+   - Update paths in `config_loader.py` if needed
 
 5. **Configure settings**:
-   - Edit `config.py` to set your `root_path` and `device` (cpu/cuda/mps)
+   - Edit `config_loader.py` to set your `root_path` and `device` (cpu/cuda/mps)
 
 
 ### Web Interface (Local Development)
@@ -153,22 +145,6 @@ The system detects fixed anatomical landmarks on mosquito wings following standa
 
 See `config_loader.py` for the complete landmark topology definition.
 
-## Models
-
-### Segmentation
-- Architecture: U-Net++ with EfficientNet-B0 encoder
-- Input: 640×320 grayscale
-- Enhancement: CoordConv layers
-
-### Landmark Detection
-- Architecture: Custom Hourglass with CoordConv
-- Input: Image + segmentation mask
-- Output: Landmark heatmaps
-
-### Classification
-- Training data: 34+ mosquito species
-- Input: 480×240 contrast-enhanced image
-- Output: Species probabilities
 
 ## Training Data Preparation
 
