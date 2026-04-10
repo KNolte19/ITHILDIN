@@ -29,6 +29,12 @@
         <strong>Note:</strong> Species identification is only available for mosquito wings. Only landmark predictions are shown for {{ family }} analysis.
       </p>
       {% endif %}
+      {% if not allow_storage %}
+      <p style="color: #155724; background-color: #d4edda; padding: 10px; border-radius: 3px; margin-top: 10px;">
+        <strong>Privacy:</strong> You did not consent to long-term image storage. Your uploaded images will be automatically deleted when you leave this page or within 10 minutes.
+        Your results (CSV/TPS files) will remain available via your session ID.
+      </p>
+      {% endif %}
     </div>
     <a href="/download_csv" class="btn-submit">Download Table as CSV</a>
     <a href="/download_tps" class="btn-submit">Download Coords as TPS</a>
@@ -71,5 +77,32 @@
       </tbody>
     </table>
   </div>
+
+  {% if not allow_storage %}
+  <script>
+    // When the user leaves this page, ask the server to delete their uploaded images.
+    var _cleanupSent = false;
+    function sendCleanup() {
+      if (_cleanupSent) { return; }
+      _cleanupSent = true;
+      if (navigator.sendBeacon) {
+        navigator.sendBeacon('/cleanup_session');
+      }
+    }
+
+    // visibilitychange fires reliably on most browsers when the tab is closed or
+    // navigated away from, including mobile.
+    document.addEventListener('visibilitychange', function () {
+      if (document.visibilityState === 'hidden') {
+        sendCleanup();
+      }
+    });
+
+    // beforeunload is a fallback for browsers that don't support the above.
+    window.addEventListener('beforeunload', function () {
+      sendCleanup();
+    });
+  </script>
+  {% endif %}
 </body>
 </html>
