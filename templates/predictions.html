@@ -21,12 +21,15 @@
     <div class="info-section" style="background-color: #f0f0f0; padding: 15px; margin-bottom: 20px; border-radius: 5px;">
       <p><strong>Insect Family:</strong> {{ family|capitalize }}</p>
       <p><strong>Number of Images:</strong> {{ num_images }}</p>
-      <p><strong>Upload Time:</strong> {{ upload_time }} seconds</p>
-      <p><strong>Processing Time:</strong> {{ processing_time }} seconds</p>
-      <p><strong>Total Time:</strong> {{ total_time }} seconds</p>
       {% if not has_classifier %}
       <p style="color: #856404; background-color: #fff3cd; padding: 10px; border-radius: 3px; margin-top: 10px;">
         <strong>Note:</strong> Species identification is only available for mosquito wings. Only landmark predictions are shown for {{ family }} analysis.
+      </p>
+      {% endif %}
+      {% if not allow_storage %}
+      <p style="color: #155724; background-color: #d4edda; padding: 10px; border-radius: 3px; margin-top: 10px;">
+        <strong>Privacy:</strong> You did not consent to long-term image storage. Your uploaded images will be automatically deleted when you leave this page or within 10 minutes.
+        Your results (CSV/TPS files) will remain available via your session ID.
       </p>
       {% endif %}
     </div>
@@ -71,5 +74,32 @@
       </tbody>
     </table>
   </div>
+
+  {% if not allow_storage %}
+  <script>
+    // When the user leaves this page, ask the server to delete their uploaded images.
+    var _cleanupSent = false;
+    function sendCleanup() {
+      if (_cleanupSent) { return; }
+      _cleanupSent = true;
+      if (navigator.sendBeacon) {
+        navigator.sendBeacon('/cleanup_session');
+      }
+    }
+
+    // visibilitychange fires reliably on most browsers when the tab is closed or
+    // navigated away from, including mobile.
+    document.addEventListener('visibilitychange', function () {
+      if (document.visibilityState === 'hidden') {
+        sendCleanup();
+      }
+    });
+
+    // beforeunload is a fallback for browsers that don't support the above.
+    window.addEventListener('beforeunload', function () {
+      sendCleanup();
+    });
+  </script>
+  {% endif %}
 </body>
 </html>

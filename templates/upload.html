@@ -48,7 +48,7 @@
                     For regular uploads or large amounts of images we recommend to install the application locally. 
                     You can find the repository and installation instructions <a href="https://github.com/KNolte19/MosquitoWingClassifier" target="_blank">here</a>.
                     The model takes on average 3 to 5 seconds per image to classify. 
-                    By uploading images, you agree to grant us the rights to use them for research and educational purposes, confirming that you own or have the necessary rights for the images.
+                    Please confirm that you own or have the necessary rights for the images you upload.
                     <a href="/get_example"> Click here to get an example prediction.</a>
                 </p>
                 <div class="image-container">
@@ -63,14 +63,22 @@
                         {% endfor %}
                     </select>
                     <br><br>
+                    <div style="margin-bottom: 15px; padding: 12px; background-color: #f0f4f8; border: 1px solid #cdd8e3; border-radius: 5px;">
+                        <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer; font-size: 0.95em; line-height: 1.5;">
+                            <input type="checkbox" name="allow_long_term_storage" id="consentCheckbox"
+                                   style="margin-top: 3px; flex-shrink: 0; width: 16px; height: 16px; cursor: pointer;">
+                            <span>
+                                I consent to my images being stored long-term and potentially used for research and educational purposes.
+                                <br>
+                                <small style="color: #555;">
+                                    If left unchecked, your images will be automatically deleted after you leave the results page or within 10 minutes, whichever comes first.
+                                    Your results (CSV/TPS files) are not affected by this choice.
+                                </small>
+                            </span>
+                        </label>
+                    </div>
                     <input type="file" name="file" multiple class="input-file" id="fileInput"/> 
                     <button type="submit" class="btn-submit" id="uploadButton" disabled>Upload & Classify</button>
-                    <div id="progressContainer" style="display:none; margin-top: 20px;">
-                        <p id="progressText">Processing images, please wait...</p>
-                        <div style="width: 100%; background-color: #f0f0f0; border-radius: 5px;">
-                            <div id="progressBar" style="width: 0%; height: 30px; background-color: #4CAF50; border-radius: 5px; text-align: center; line-height: 30px; color: white;"></div>
-                        </div>
-                    </div>
                 </form>
 
             </section>

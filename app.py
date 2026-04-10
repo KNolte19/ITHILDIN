@@ -9,15 +9,17 @@ This module provides a web interface for:
 - Selecting insect family for analysis (mosquito, drosophila, tsetse)
 """
 
+import json
 import os
 import tempfile
 import shutil
+import threading
 import time
 import uuid
 from zipfile import ZipFile
 
 import pandas as pd
-from flask import Flask, render_template, request, send_file, session
+from flask import Flask, render_template, request, send_file, session, make_response
 from rembg import new_session
 
 import main
@@ -33,6 +35,42 @@ app = Flask(__name__, template_folder=os.path.join(BASE_DIR, "templates"))
 app.config["STATIC_FOLDER"] = "static"
 app.config["REQUESTS"] = "static/requests"
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "Apfelkuchen")
+
+# How long (seconds) to keep temporary (non-consented) sessions before auto-deletion
+TEMP_SESSION_TTL = 600  # 10 minutes
+
+
+def _cleanup_expired_sessions():
+    """Background thread: delete temporary request directories older than TEMP_SESSION_TTL."""
+    while True:
+        time.sleep(60)  # check every minute
+        try:
+            base_request_path = os.path.join(BASE_DIR, "static", "requests")
+            if not os.path.isdir(base_request_path):
+                continue
+            now = time.time()
+            for entry in os.scandir(base_request_path):
+                if not entry.is_dir() or not entry.name.startswith("request_"):
+                    continue
+                meta_path = os.path.join(entry.path, "meta.json")
+                if not os.path.exists(meta_path):
+                    continue
+                try:
+                    with open(meta_path) as f:
+                        meta = json.load(f)
+                    if not meta.get("allow_storage", True):
+                        age = now - meta.get("created_at", now)
+                        if age >= TEMP_SESSION_TTL:
+                            shutil.rmtree(entry.path, ignore_errors=True)
+                            app.logger.info(f"Auto-deleted expired temp session: {entry.name}")
+                except Exception as e:
+                    app.logger.warning(f"Cleanup error for {entry.name}: {e}")
+        except Exception as e:
+            app.logger.warning(f"Background cleanup error: {e}")
+
+
+_cleanup_thread = threading.Thread(target=_cleanup_expired_sessions, daemon=True)
+_cleanup_thread.start()
 
 
 def get_identifier():
@@ -59,6 +97,12 @@ def search_session():
         return render_template("upload.html", 
                              families=list(AVAILABLE_FAMILIES.keys()),
                              error="Please enter a session ID"), 400
+
+    # Validate session_id to only allow safe alphanumeric characters (prevents path traversal)
+    if not session_id.isalnum() or len(session_id) > 64:
+        return render_template("upload.html",
+                             families=list(AVAILABLE_FAMILIES.keys()),
+                             error="Invalid session ID format. Please check the ID and try again."), 400
     
     # Build path to potential session
     base_request_path = os.path.join(app.root_path, "static", "requests")
@@ -90,16 +134,25 @@ def search_session():
         session["family"] = family
         session["request_path"] = os.path.join(app.config["REQUESTS"], f"request_{session_id}")
         session["request_path_processed"] = os.path.join(session["request_path"], "processed")
-        
+
+        # Read consent from stored metadata if available
+        meta_path = os.path.join(request_path, "meta.json")
+        allow_storage = True  # default: treat restored sessions as consented
+        if os.path.exists(meta_path):
+            try:
+                with open(meta_path) as mf:
+                    allow_storage = json.load(mf).get("allow_storage", True)
+            except Exception:
+                pass
+        session["allow_storage"] = allow_storage
+
         return render_template(
             "predictions.html", 
             predictions=prediction_dict, 
             request=session_id,
             family=family,
             has_classifier=has_classifier,
-            upload_time="N/A",
-            processing_time="N/A",
-            total_time="N/A",
+            allow_storage=allow_storage,
             num_images=len(prediction_dict)
         )
     except Exception as e:
@@ -139,13 +192,14 @@ def upload_folder():
         file: Multiple image files (.jpg, .jpeg, .png, .tif, .tiff)
         family: Selected insect family (mosquito, drosophila, tsetse)
     """
-    # Track start time for progress
-    upload_start_time = time.time()
-    
+    # Read long-term storage consent (checkbox sends "on" when checked)
+    allow_storage = request.form.get("allow_long_term_storage", "off") == "on"
+    session["allow_storage"] = allow_storage
+
     # Get selected family (default to mosquito for backward compatibility)
     selected_family = request.form.get("family", "mosquito")
     if selected_family not in AVAILABLE_FAMILIES:
-        return f"Invalid insect family: {selected_family}", 400
+        return "Invalid insect family selection.", 400
     
     # Store family selection in session
     session["family"] = selected_family
@@ -172,6 +226,11 @@ def upload_folder():
         app.logger.error(f"Unexpected error: {e}")
         return "An unexpected error occurred.", 500
 
+    # Write metadata for background cleanup
+    meta_path = os.path.join(session["request_path"], "meta.json")
+    with open(meta_path, "w") as f:
+        json.dump({"allow_storage": allow_storage, "created_at": time.time()}, f)
+
     # Update session paths to use relative URLs
     session["request_path"] = os.path.join(
         app.config["REQUESTS"], f"request_{session['identifier']}"
@@ -186,12 +245,6 @@ def upload_folder():
     allowed_extensions = (".jpg", ".jpeg", ".png", ".tif", ".tiff")
     files = [file for file in files if file.filename.endswith(allowed_extensions)]
 
-    # Track upload completion time
-    upload_time = time.time() - upload_start_time
-    
-    # Track processing start time
-    processing_start_time = time.time()
-
     # Extract filenames and create output paths
     file_name_list = [file.filename.split(".")[0] for file in files]
     processed_file_name_list = [
@@ -200,28 +253,10 @@ def upload_folder():
     ]
 
     # Run ITHILDIN prediction pipeline on each image with family parameter
-    # Collect timing information
-    all_timings = []
     for i, file in enumerate(files):
-        timing_info = {}
-        main.run_prediction(file, save_path=processed_file_name_list[i], family=selected_family, timing_info=timing_info)
-        all_timings.append(timing_info)
-    
-    # Track total processing time
-    processing_time = time.time() - processing_start_time
-    total_time = time.time() - upload_start_time
-    
-    # Calculate average timing for each step
-    avg_timings = {}
-    if all_timings:
-        for key in all_timings[0].keys():
-            avg_timings[key] = sum(t.get(key, 0) for t in all_timings) / len(all_timings)
-    
-    # Log timing information for performance analysis
-    app.logger.info(f"Processing complete for session {session['identifier']}")
-    app.logger.info(f"Number of images: {len(files)}")
-    app.logger.info(f"Average timings per image: {avg_timings}")
-    app.logger.info(f"Total processing time: {processing_time:.2f}s")
+        main.run_prediction(file, save_path=processed_file_name_list[i], family=selected_family)
+
+    app.logger.info(f"Processing complete for session {session['identifier']} ({len(files)} images)")
 
     # Generate dataframe from prediction results
     prediction_df = utils.json_to_dataframe(session["request_path_processed"], semilandmark=True, family=session["family"], with_lm_predictions=False, coordinate_type="unscaled")
@@ -248,11 +283,39 @@ def upload_folder():
         request=title,
         family=selected_family,
         has_classifier=has_classifier,
-        upload_time=f"{upload_time:.2f}",
-        processing_time=f"{processing_time:.2f}",
-        total_time=f"{total_time:.2f}",
+        allow_storage=allow_storage,
         num_images=len(files)
     )
+
+
+@app.route("/cleanup_session", methods=["POST"])
+def cleanup_session():
+    """
+    Delete uploaded images for the current session when the user has not
+    consented to long-term storage.
+
+    Called automatically via navigator.sendBeacon when the user leaves the
+    predictions page.  Only image files inside the ``processed/`` sub-directory
+    are removed; CSV / TPS result files are kept so the user can still
+    retrieve them via the session-search feature.
+
+    Returns:
+        Response: 204 No Content on success, 400 if session data is missing.
+    """
+    identifier = session.get("identifier")
+    allow_storage = session.get("allow_storage", True)
+
+    if not identifier or identifier == "example":
+        return make_response("", 204)
+
+    if not allow_storage:
+        request_dir = os.path.join(app.root_path, "static", "requests", f"request_{identifier}")
+        processed_dir = os.path.join(request_dir, "processed")
+        if os.path.isdir(processed_dir):
+            shutil.rmtree(processed_dir, ignore_errors=True)
+            app.logger.info(f"Deleted processed images for temp session: {identifier}")
+
+    return make_response("", 204)
 
 
 @app.route("/get_example")
@@ -281,9 +344,7 @@ def get_example():
         request="Example",
         family="mosquito",
         has_classifier=True,
-        upload_time="0.00",
-        processing_time="0.00",
-        total_time="0.00",
+        allow_storage=True,
         num_images=len(prediction_dict)
     )
 
