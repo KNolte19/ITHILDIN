@@ -153,9 +153,6 @@ def search_session():
             family=family,
             has_classifier=has_classifier,
             allow_storage=allow_storage,
-            upload_time="N/A",
-            processing_time="N/A",
-            total_time="N/A",
             num_images=len(prediction_dict)
         )
     except Exception as e:
@@ -195,9 +192,6 @@ def upload_folder():
         file: Multiple image files (.jpg, .jpeg, .png, .tif, .tiff)
         family: Selected insect family (mosquito, drosophila, tsetse)
     """
-    # Track start time for progress
-    upload_start_time = time.time()
-    
     # Read long-term storage consent (checkbox sends "on" when checked)
     allow_storage = request.form.get("allow_long_term_storage", "off") == "on"
     session["allow_storage"] = allow_storage
@@ -251,12 +245,6 @@ def upload_folder():
     allowed_extensions = (".jpg", ".jpeg", ".png", ".tif", ".tiff")
     files = [file for file in files if file.filename.endswith(allowed_extensions)]
 
-    # Track upload completion time
-    upload_time = time.time() - upload_start_time
-    
-    # Track processing start time
-    processing_start_time = time.time()
-
     # Extract filenames and create output paths
     file_name_list = [file.filename.split(".")[0] for file in files]
     processed_file_name_list = [
@@ -265,28 +253,10 @@ def upload_folder():
     ]
 
     # Run ITHILDIN prediction pipeline on each image with family parameter
-    # Collect timing information
-    all_timings = []
     for i, file in enumerate(files):
-        timing_info = {}
-        main.run_prediction(file, save_path=processed_file_name_list[i], family=selected_family, timing_info=timing_info)
-        all_timings.append(timing_info)
-    
-    # Track total processing time
-    processing_time = time.time() - processing_start_time
-    total_time = time.time() - upload_start_time
-    
-    # Calculate average timing for each step
-    avg_timings = {}
-    if all_timings:
-        for key in all_timings[0].keys():
-            avg_timings[key] = sum(t.get(key, 0) for t in all_timings) / len(all_timings)
-    
-    # Log timing information for performance analysis
-    app.logger.info(f"Processing complete for session {session['identifier']}")
-    app.logger.info(f"Number of images: {len(files)}")
-    app.logger.info(f"Average timings per image: {avg_timings}")
-    app.logger.info(f"Total processing time: {processing_time:.2f}s")
+        main.run_prediction(file, save_path=processed_file_name_list[i], family=selected_family)
+
+    app.logger.info(f"Processing complete for session {session['identifier']} ({len(files)} images)")
 
     # Generate dataframe from prediction results
     prediction_df = utils.json_to_dataframe(session["request_path_processed"], semilandmark=True, family=session["family"], with_lm_predictions=False, coordinate_type="unscaled")
@@ -314,9 +284,6 @@ def upload_folder():
         family=selected_family,
         has_classifier=has_classifier,
         allow_storage=allow_storage,
-        upload_time=f"{upload_time:.2f}",
-        processing_time=f"{processing_time:.2f}",
-        total_time=f"{total_time:.2f}",
         num_images=len(files)
     )
 
@@ -378,9 +345,6 @@ def get_example():
         family="mosquito",
         has_classifier=True,
         allow_storage=True,
-        upload_time="0.00",
-        processing_time="0.00",
-        total_time="0.00",
         num_images=len(prediction_dict)
     )
 

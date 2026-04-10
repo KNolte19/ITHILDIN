@@ -21,9 +21,6 @@
     <div class="info-section" style="background-color: #f0f0f0; padding: 15px; margin-bottom: 20px; border-radius: 5px;">
       <p><strong>Insect Family:</strong> {{ family|capitalize }}</p>
       <p><strong>Number of Images:</strong> {{ num_images }}</p>
-      <p><strong>Upload Time:</strong> {{ upload_time }} seconds</p>
-      <p><strong>Processing Time:</strong> {{ processing_time }} seconds</p>
-      <p><strong>Total Time:</strong> {{ total_time }} seconds</p>
       {% if not has_classifier %}
       <p style="color: #856404; background-color: #fff3cd; padding: 10px; border-radius: 3px; margin-top: 10px;">
         <strong>Note:</strong> Species identification is only available for mosquito wings. Only landmark predictions are shown for {{ family }} analysis.
