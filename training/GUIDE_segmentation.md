@@ -1,6 +1,6 @@
 # Segmentation Training Data Preparation Checklist
 
-Use this checklist to ensure you have everything ready before running the scripts. We have prepared a small sample dataset in `training/example/` for testing the training scripts before using your own data. The data generation scripts will create the necessary .npy files in the correct format. Make sure to run those scripts first and verify the output files are created in `training/example/` before proceeding with training. Please note that the sample dataset is very small and is only meant for testing the training pipeline, so don't expect good performance from models trained on this data. It's just to ensure that the training scripts are working correctly with the expected input format. If you want to then train. on your own data use can use the same data scheme as the example dataset, but replace the images and annotations with your own.
+Use this checklist to ensure you have everything ready before running the scripts. We have prepared a small sample dataset in `training/example/` for testing the training scripts before using your own data. The data generation scripts will create the necessary .npy files in the correct format. Make sure to run those scripts first and verify the output files are created in `training/example/` before proceeding with training. Please note that the sample dataset is very small and is only meant for testing the training pipeline, so don't expect good performance from models trained on this data. It's just to ensure that the training scripts are working correctly with the expected input format. If you want to then train on your own data use can use the same data scheme as the example dataset, but replace the images and annotations with your own.
 
 ## For Segmentation Training Data
 
@@ -66,13 +66,14 @@ training/
 ---
 
 ## Train the Segmentation Model
-1. Update the script to use your experiment name if you are not using the experiment
+1. Update the script to use your experiment name if you are not using the example 
 2. Run the appropriate training script or use the colab link:
     ```bash
     python training/train_segment_model_local.py
     ```
 
-Alternatively you can also use the Colab notebook for training the segmentattion model. We provided the already generated arrays and pretrained models in the Google Drive folder, so you can directly run the training cells without having to prepare your own data first. 
+Alternatively you can also use the Colab notebook for training the segmentattion model. We provided the already generated arrays and pretrained models in the Google Drive folder, so you can directly run the training cells without having to prepare your own data first. Note that the dataset there are larger to give you a better idea of the training process and expected performance, but you can also replace those with your own data by following the same data scheme as the example dataset.
+
 - [Train Segmentation Model](https://drive.google.com/drive/folders/1_rAI4mhnU5WG1cFDbFC4SGefEG_6-bmL?usp=share_link)
 
 ---

@@ -5,12 +5,11 @@ Use this checklist to ensure you have everything ready before running the script
 ## For Landmark Training Data
 
 ### Before You Start
-
+- [ ] I have trained the segmentation model on my data
 - [ ] I have raw wing images in a supported format (JPG, PNG, TIFF)
 - [ ] I have a CSV file with landmark annotations (see below)
 - [ ] I know how many landmarks per image 
 - [ ] I have chosen a name for my experiment (e.g., "example")
-- [ ] I have trained the segmentation model on my data
 
 ### CSV File Requirements
 
@@ -101,14 +100,14 @@ If the script reports errors, check:
 
 ---
 
-## Train the Landmark Model
+## Train the Landmark Model Locally
 1. Update the script to use your experiment name and provide the path to the segmentation model
 2. Run the appropriate training script or use the colab link:
     ```bash
     python training/train_landmark_model_local.py
     ```
 
-Alternatively you can also use the Colab notebook for training the landmark model. We provided the already generated arrays and pretrained models in the Google Drive folder, so you can directly run the training cells without having to prepare your own data first. 
+Alternatively you can also use the Colab notebook for training the landmark model. We provided the already generated arrays and pretrained models in the Google Drive folder, so you can directly run the training cells without having to prepare your own data first. Note that the dataset there are larger to give you a better idea of the training process and expected performance, but you can also replace those with your own data by following the same data scheme as the example dataset.
 
 - [Train Landmark Model](https://drive.google.com/drive/folders/1_rAI4mhnU5WG1cFDbFC4SGefEG_6-bmL?usp=share_link)
 
