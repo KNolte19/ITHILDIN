@@ -18,25 +18,25 @@ _ROOT_PATH = os.environ.get("ITHILDIN_ROOT", _DEFAULT_ROOT)
 
 # ========== Mosquito Configuration ==========
 MOSQUITO_CONFIG = { 
-    "family": "mosquito",
-    "has_classification": True,
-    "root_path": _ROOT_PATH,
-    "device": "cpu",
-    "segmentation_image_size": (640, 320),
-    "landmark_image_size": (480, 240),
-    "classifier_image_size": (480, 240),
+    "family": "mosquito", # Family name
+    "has_classification": True, # Whether the family has a trained classification model (True for mosquito, False for drosophila and tsetse)
+    "root_path": _ROOT_PATH, # Root path for the project, can be set via ITHILDIN_ROOT environment variable
+    "device": "cpu", # Device to run inference on (e.g., "cpu" or "cuda")
+    "segmentation_image_size": (640, 320), # Input size for segmentation model
+    "landmark_image_size": (480, 240), # Input size for landmark model
+    "classifier_image_size": (480, 240), # Input size for classification model
     "model_paths": {
-        "segmentation": "training/models_mosquito/mosquito_segmentation_weights_fold-1.pth",
-        "landmark": "training/models_mosquito/mosquito_landmark_weights_fold-1.pth",
-        "classification": "training/models_mosquito/mosquito_classifier_1_evaluation.pth"
+        "segmentation": "training/models_mosquito/mosquito_segmentation_weights_fold-1.pth", # Path to segmentation model weights
+        "landmark": "training/models_mosquito/mosquito_landmark_weights_fold-1.pth", # Path to landmark model weights
+        "classification": "training/models_mosquito/mosquito_classifier_1_evaluation.pth" # Path to classification model weights
     },
-    "N_landmarks": 17,
-    "N_semilandmarks": 52,
-    "index_most_left_landmark": 0,
-    "index_most_right_landmark": 5,
-    "index_most_upper_landmark": 1,
-    "index_most_lower_landmark": 8,
-    "allowed_connections": [
+    "N_landmarks": 17, # Number of fixed landmarks
+    "N_semilandmarks": 52, # Total number of semilandmarks (sum of semilandmarks across all connections)
+    "index_most_left_landmark": 0, # Index of the most left landmark (used for orientation)
+    "index_most_right_landmark": 5, # Index of the most right landmark (used for orientation)
+    "index_most_upper_landmark": 1, # Index of the most upper landmark (used for orientation)
+    "index_most_lower_landmark": 8, # Index of the most lower landmark (used for orientation)
+    "allowed_connections": [ # List of allowed connections between landmarks for semilandmark placement
         (0, 1), (0, 14),       
         (1, 2),                 
         (2, 3), (2, 15),        
@@ -50,7 +50,7 @@ MOSQUITO_CONFIG = {
         (12, 16),         
         (14, 15),           
     ],
-    "not_allowed_connections": [
+    "not_allowed_connections": [ # List of not allowed connections between landmarks (used to define the failure for semilandmark placement)
         (0, 2), (0, 9), (0, 10), (0, 11), (0, 12), (0, 13),
         (1, 3), (1, 14), (1, 13),
         (2, 4), (2, 12), (2, 13), (2, 14),
@@ -67,7 +67,7 @@ MOSQUITO_CONFIG = {
         (13, 15), (13, 16),
         (14, 16)
     ],
-    "semilandmarks_per_connection": [(4), (4), (1), (1), (4), (1), (4), (1), (4), (1), (4), (1), (4), (1), (4), (4), (1), (4), (4),],
+    "semilandmarks_per_connection": [(4), (4), (1), (1), (4), (1), (4), (1), (4), (1), (4), (1), (4), (1), (4), (4), (1), (4), (4),], # Number of semilandmarks per connection
     "classifier_species_list": [
         'Aedes_aegypti', 'Aedes_albopictus', 'Aedes_annulipes-group',
         'Aedes_caspius', 'Aedes_cinereus-geminus-pair',
@@ -85,8 +85,8 @@ MOSQUITO_CONFIG = {
         'Haemagogus_leucocelaenus', 'Limatus_durhamii',
         'Sabethes_albiprivus', 'Wyeomyia_arthrostigma', 'other'
     ],
-    "landmark_reference_path": "analysis/LDA_reference_dataframe_landmarks.csv",
-    "semilandmark_reference_path": "analysis/LDA_reference_dataframe_semilandmarks.csv",
+    "landmark_reference_path": "analysis/LDA_reference_dataframe_landmarks.csv", # Path to reference dataframe for landmarks (used in LDA analysis)
+    "semilandmark_reference_path": "analysis/LDA_reference_dataframe_semilandmarks.csv", # Path to reference dataframe for semilandmarks (used in LDA analysis)
 }
 
 # ========== Drosophila Configuration ==========

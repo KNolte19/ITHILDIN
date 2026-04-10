@@ -19,8 +19,7 @@ Use this checklist to ensure you have everything ready before running the script
 
 - [ ] Run the image processing script to align and normalize images:
     ```bash
-    cd training
-    python generate_segmentation_data.py --experiment example --process-only
+    python training/generate_segmentation_data.py --experiment example --process-only
     ```
 - [ ] Confirm that `training/{experiment}/segmentation/image_processed/` contains processed images
 
@@ -54,7 +53,7 @@ training/
 
 - [ ] Run the script to generate the .npy arrays for training:
     ```bash
-    python generate_segmentation_data.py --experiment example --arrays-only
+    python training/generate_segmentation_data.py --experiment example --arrays-only
     ```
 - [ ] Confirm that the following files exist in `training/{experiment}/`:
   - [ ] `path_forsegment.npy`

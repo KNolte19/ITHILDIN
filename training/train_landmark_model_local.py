@@ -711,7 +711,7 @@ def get_segmentation_model(model_path=PRETRAINED_SEGMENT_MODEL_PATH, pretrained=
 
     if pretrained:
         # Load pretrained weights
-        segmentation_model.load_state_dict(torch.load(model_path, map_location=DEVICE, weight_only=True))
+        segmentation_model.load_state_dict(torch.load(model_path, map_location=DEVICE, weights_only=True))
 
     return segmentation_model
 
@@ -720,7 +720,7 @@ segmentation_model = get_segmentation_model(model_path=PRETRAINED_SEGMENT_MODEL_
 
 if PRETRAINED_BOOL and PRETRAINED_SEGMENT_MODEL_PATH and os.path.exists(PRETRAINED_SEGMENT_MODEL_PATH):
     print(f"Loading pretrained weights from: {PRETRAINED_SEGMENT_MODEL_PATH}")
-    segmentation_model.load_state_dict(torch.load(PRETRAINED_SEGMENT_MODEL_PATH, map_location=DEVICE, weight_only=True))
+    segmentation_model.load_state_dict(torch.load(PRETRAINED_SEGMENT_MODEL_PATH, map_location=DEVICE, weights_only=True))
 
 print(f"Model created with {sum(p.numel() for p in segmentation_model.parameters())} parameters")
 
