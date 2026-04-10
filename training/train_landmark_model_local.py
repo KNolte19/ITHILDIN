@@ -37,7 +37,7 @@ EXPERIMENT = "example"  # Experiment name (should match data directory)
 DATA_PATH = "./training/example/"  # Path to training data directory (relative to repo root)
 
 # Model Architecture Parameters
-N_LANDMARKS = 15  # Number of landmarks to detect
+N_LANDMARKS = 14  # Number of landmarks to detect
 HG_BLOCKS = 4  # Number of Hourglass blocks
 
 # Training Hyperparameters

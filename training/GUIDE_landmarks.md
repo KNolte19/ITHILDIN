@@ -47,7 +47,7 @@ training/
 
 - [ ] Run the image processing script to align and normalize images:
     ```bash
-    python training/generate_landmark_data.py --experiment example --n-landmarks 15 --process-only
+    python training/generate_landmark_data.py --experiment example --n-landmarks 14 --process-only
     ```
 
 - [ ] Confirm that `training/example/landmark/image_processed/` contains processed images
@@ -61,7 +61,7 @@ training/
 
 - [ ] Run the script to generate the .npy arrays for training:
     ```bash
-    python training/generate_landmark_data.py --experiment example --n-landmarks 15 --arrays-only
+    python training/generate_landmark_data.py --experiment example --n-landmarks 14 --arrays-only
     ```
 
 - [ ] Confirm that the following files exist in `training/example/`:
