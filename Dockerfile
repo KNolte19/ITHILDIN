@@ -1,52 +1,55 @@
-# Use rocker/r-ver as base - provides stable R 4.4.1 with ARM64 support
 FROM rocker/r-ver:4.4.1
 
-# Set working directory
 WORKDIR /app
 
-# Install system dependencies: Python 3.12, build tools, and R compilation libraries
-RUN apt-get update && apt-get install -y \
-    python3.12 \
-    python3.12-dev \
-    python3-pip \
-    build-essential \
-    gfortran \
-    libcurl4-openssl-dev \
-    libssl-dev \
-    libxml2-dev \
-    liblapack-dev \
-    libblas-dev \
-    curl \
+# Python 3.12 requires deadsnakes PPA on Ubuntu 22.04 (Jammy)
+# Also install all system libs needed for R package compilation and Python packages on arm64
+RUN apt-get update && apt-get install -y software-properties-common gpg-agent && \
+    add-apt-repository ppa:deadsnakes/ppa && \
+    apt-get update && apt-get install -y \
+        python3.12 \
+        python3.12-dev \
+        python3.12-distutils \
+        build-essential \
+        gfortran \
+        libcurl4-openssl-dev \
+        libssl-dev \
+        libxml2-dev \
+        liblapack-dev \
+        libblas-dev \
+        libglib2.0-0 \
+        libgomp1 \
+        libjpeg-dev \
+        zlib1g-dev \
+        curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Install R packages: install dependencies first, then geomorph and shapes
-# dependencies=TRUE ensures all transitive dependencies are installed
+# deadsnakes Python 3.12 does not include pip - bootstrap it
+RUN curl -sS https://bootstrap.pypa.io/get-pip.py | python3.12
+
+# Set python3.12 as default python3 and ensure pip tools are on PATH
+RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 1
+ENV PATH="/usr/local/bin:$PATH"
+
+# Install R packages in dependency order (geomorph depends on rrpp which depends on Rcpp)
 RUN R -e "install.packages(c('Rcpp', 'RcppArmadillo', 'rrpp', 'shapes', 'geomorph'), repos='https://cloud.r-project.org/', dependencies=TRUE)"
 
-# Verify R package installations succeeded
-# Without explicit stop(), install.packages() exits 0 even on failure
-RUN R -e "if (!requireNamespace('geomorph', quietly=TRUE)) stop('geomorph installation failed')"
-RUN R -e "if (!requireNamespace('shapes', quietly=TRUE)) stop('shapes installation failed')"
+# Verify R packages actually load (install.packages exits 0 even on failure)
+RUN R -e "library(geomorph); library(shapes); cat('R packages verified OK\n')"
 
-# Copy requirements file
+# Copy and install Python dependencies
+# --prefer-binary uses pre-built wheels where available (important for arm64 packages like torch)
 COPY requirements.txt .
-
-# Install Python dependencies
-RUN pip3 install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --prefer-binary -r requirements.txt
 
 # Copy application code
 COPY . .
 
-# Create runtime directories after copying application code.
-# analysis/temp is created here (not before COPY) to avoid Docker overlay layer ordering issues
-# where a directory created before COPY . . could be shadowed in the final image.
-RUN mkdir -p /app/analysis/temp /app/static/requests
+# Create runtime directories. analysis/temp must be writable for R script I/O (input.csv, output.csv)
+RUN mkdir -p /app/analysis/temp /app/static/requests && \
+    chmod -R 777 /app/analysis/temp
 
-# Make entrypoint script executable
 RUN chmod +x /app/entrypoint.sh
 
-# Expose port
 EXPOSE 8080
-
-# Set entrypoint
 ENTRYPOINT ["/app/entrypoint.sh"]
