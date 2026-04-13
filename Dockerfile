@@ -1,17 +1,14 @@
-# Use Python 3.12 slim image as base
-FROM python:3.12-slim
-FROM rocker/r-ver:4.4.1 
+# Use rocker/r-ver as base - provides stable R 4.4.1 with ARM64 support
+FROM rocker/r-ver:4.4.1
 
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies including build tools required for compiling R packages
-# build-essential (gcc, g++, make) is required to compile C++ R packages such as rrpp/Rcpp,
-# which are dependencies of geomorph. Without it, install.packages() silently fails on slim images.
-# gfortran is required for R packages that contain Fortran code.
+# Install system dependencies: Python 3.12, build tools, and R compilation libraries
 RUN apt-get update && apt-get install -y \
-    r-base \
-    r-base-dev \
+    python3.12 \
+    python3.12-dev \
+    python3-pip \
     build-essential \
     gfortran \
     libcurl4-openssl-dev \
@@ -22,18 +19,20 @@ RUN apt-get update && apt-get install -y \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Install R packages and verify the installation succeeded.
-# Without the explicit stop() call, install.packages() exits 0 even on failure,
-# which would allow the Docker build to succeed with geomorph missing.
-RUN R -e "install.packages(c('geomorph', 'shapes'), repos='https://cloud.r-project.org/', dependencies=TRUE, verbose=TRUE, INSTALL_opts='--no-test-load')" 2>&1 | tee /tmp/r_install.log || true
-RUN cat /tmp/r_install.log
+# Install R packages: install dependencies first, then geomorph and shapes
+# dependencies=TRUE ensures all transitive dependencies are installed
+RUN R -e "install.packages(c('Rcpp', 'RcppArmadillo', 'rrpp', 'shapes', 'geomorph'), repos='https://cloud.r-project.org/', dependencies=TRUE)"
+
+# Verify R package installations succeeded
+# Without explicit stop(), install.packages() exits 0 even on failure
 RUN R -e "if (!requireNamespace('geomorph', quietly=TRUE)) stop('geomorph installation failed')"
+RUN R -e "if (!requireNamespace('shapes', quietly=TRUE)) stop('shapes installation failed')"
 
 # Copy requirements file
 COPY requirements.txt .
 
 # Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip3 install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY . .
