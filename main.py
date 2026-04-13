@@ -243,6 +243,12 @@ def get_landmark_predictions(dataframe, session, has_classifier=False):
     # Separate landmark-only data (excluding semilandmarks)
     dataframe_landmarks = dataframe.loc[:, ~dataframe.columns.str.contains(r"_sm_", regex=True)].copy()
 
+    # Drop rows where landmark coordinates are missing (happens when image processing fails).
+    # R's gpagen() cannot handle NA values, so rows with any missing landmark coordinate
+    # must be excluded before Procrustes analysis.
+    coord_cols_lm = [c for c in dataframe_landmarks.columns if c.startswith("X_") or c.startswith("Y_")]
+    dataframe_landmarks = dataframe_landmarks.dropna(subset=coord_cols_lm).reset_index(drop=True)
+
     # Filter for complete semilandmark data (no missing values)
     dataframe_semilandmarks = dataframe.dropna(axis=0, how="any")
 
