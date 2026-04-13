@@ -22,9 +22,9 @@ RUN apt-get update && apt-get install -y \
 # Install R packages and verify the installation succeeded.
 # Without the explicit stop() call, install.packages() exits 0 even on failure,
 # which would allow the Docker build to succeed with geomorph missing.
-RUN R -e "install.packages(c('geomorph', 'shapes'), repos='https://cloud.r-project.org/'); \
-          if (!requireNamespace('geomorph', quietly=TRUE)) stop('geomorph installation failed'); \
-          if (!requireNamespace('shapes', quietly=TRUE)) stop('shapes installation failed')"
+RUN R -e "install.packages(c('geomorph', 'shapes'), repos='https://cloud.r-project.org/')"
+RUN R -e "if (!requireNamespace('geomorph', quietly=TRUE)) stop('geomorph installation failed')"
+RUN R -e "if (!requireNamespace('shapes', quietly=TRUE)) stop('shapes installation failed')"
 
 # Copy requirements file
 COPY requirements.txt .
