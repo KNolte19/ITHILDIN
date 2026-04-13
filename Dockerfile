@@ -1,55 +1,57 @@
-FROM rocker/r-ver:4.4.1
+# Use Python 3.10.12 slim image as base
+FROM python:3.10.12-slim
 
+# Set working directory
 WORKDIR /app
 
-# Python 3.12 requires deadsnakes PPA on Ubuntu 22.04 (Jammy)
-# Also install all system libs needed for R package compilation and Python packages on arm64
-RUN apt-get update && apt-get install -y software-properties-common gpg-agent && \
-    add-apt-repository ppa:deadsnakes/ppa && \
-    apt-get update && apt-get install -y \
-        python3.12 \
-        python3.12-dev \
-        python3.12-distutils \
-        build-essential \
-        gfortran \
-        libcurl4-openssl-dev \
-        libssl-dev \
-        libxml2-dev \
-        liblapack-dev \
-        libblas-dev \
-        libglib2.0-0 \
-        libgomp1 \
-        libjpeg-dev \
-        zlib1g-dev \
-        curl \
+# Create Temporary Folders
+RUN mkdir -p /app/analysis/temp && chown -R 1000:1000 /app/analysis/temp
+
+# Install system dependencies + R 4.4 from Posit prebuilt .deb
+RUN apt-get update && apt-get install -y \
+    gnupg2 \
+    curl \
+    libcurl4-openssl-dev \
+    libssl-dev \
+    libxml2-dev \
+    libgfortran5 \
+    libblas-dev \
+    liblapack-dev \
+    libuv1-dev \
+    libglu1-mesa-dev \
+    libgl1-mesa-dev \
+    libjpeg-dev \
+    && curl -fsSL https://cdn.posit.co/r/debian-12/pkgs/r-4.4.2_1_arm64.deb -o /tmp/r-4.4.2.deb \
+    && apt-get install -y /tmp/r-4.4.2.deb \
+    && rm /tmp/r-4.4.2.deb \
     && rm -rf /var/lib/apt/lists/*
 
-# deadsnakes Python 3.12 does not include pip - bootstrap it
-RUN curl -sS https://bootstrap.pypa.io/get-pip.py | python3.12
+# Add Posit R to PATH
+ENV PATH="/opt/R/4.4.2/bin:${PATH}"
 
-# Set python3.12 as default python3 and ensure pip tools are on PATH
-RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 1
-ENV PATH="/usr/local/bin:$PATH"
+# Install R packages explicitly into R 4.4.2 library
+RUN /opt/R/4.4.2/bin/Rscript -e "\
+    lib <- '/opt/R/4.4.2/lib/R/library'; \
+    install.packages(c('geomorph','shapes','RRPP','rgl','ape','ggplot2','jpeg'), \
+    lib=lib, repos='https://cloud.r-project.org/')"
 
-# Install R packages in dependency order (geomorph depends on rrpp which depends on Rcpp)
-RUN R -e "install.packages(c('Rcpp', 'RcppArmadillo', 'rrpp', 'shapes', 'geomorph'), repos='https://cloud.r-project.org/', dependencies=TRUE)"
-
-# Verify R packages actually load (install.packages exits 0 even on failure)
-RUN R -e "library(geomorph); library(shapes); cat('R packages verified OK\n')"
-
-# Copy and install Python dependencies
-# --prefer-binary uses pre-built wheels where available (important for arm64 packages like torch)
+# Copy requirements file
 COPY requirements.txt .
-RUN pip install --no-cache-dir --prefer-binary -r requirements.txt
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY . .
 
-# Create runtime directories. analysis/temp must be writable for R script I/O (input.csv, output.csv)
-RUN mkdir -p /app/analysis/temp /app/static/requests && \
-    chmod -R 777 /app/analysis/temp
+# Create static/requests directory for volume mount
+RUN mkdir -p /app/static/requests
 
+# Make entrypoint script executable
 RUN chmod +x /app/entrypoint.sh
 
+# Expose port
 EXPOSE 8080
+
+# Set entrypoint
 ENTRYPOINT ["/app/entrypoint.sh"]
