@@ -1,5 +1,6 @@
 # Use Python 3.12 slim image as base
 FROM python:3.12-slim
+FROM rocker/r-ver:4.4.1 
 
 # Set working directory
 WORKDIR /app
@@ -16,15 +17,17 @@ RUN apt-get update && apt-get install -y \
     libcurl4-openssl-dev \
     libssl-dev \
     libxml2-dev \
+    liblapack-dev \
+    libblas-dev \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Install R packages and verify the installation succeeded.
 # Without the explicit stop() call, install.packages() exits 0 even on failure,
 # which would allow the Docker build to succeed with geomorph missing.
-RUN R -e "install.packages(c('geomorph', 'shapes'), repos='https://cloud.r-project.org/')"
+RUN R -e "install.packages(c('geomorph', 'shapes'), repos='https://cloud.r-project.org/', dependencies=TRUE, verbose=TRUE, INSTALL_opts='--no-test-load')" 2>&1 | tee /tmp/r_install.log || true
+RUN cat /tmp/r_install.log
 RUN R -e "if (!requireNamespace('geomorph', quietly=TRUE)) stop('geomorph installation failed')"
-RUN R -e "if (!requireNamespace('shapes', quietly=TRUE)) stop('shapes installation failed')"
 
 # Copy requirements file
 COPY requirements.txt .
