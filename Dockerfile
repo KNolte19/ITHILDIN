@@ -7,7 +7,7 @@ WORKDIR /app
 # Create Temporary Folders
 RUN mkdir -p /app/analysis/temp && chown -R 1000:1000 /app/analysis/temp
 
-# Install system dependencies + R 4.4 from Posit prebuilt .deb
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     gnupg2 \
     curl \
@@ -21,8 +21,13 @@ RUN apt-get update && apt-get install -y \
     libglu1-mesa-dev \
     libgl1-mesa-dev \
     libjpeg-dev \
-    && curl -fsSL https://cdn.posit.co/r/debian-12/pkgs/r-4.4.2_1_arm64.deb -o /tmp/r-4.4.2.deb \
-    && apt-get install -y /tmp/r-4.4.2.deb \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install R 4.4.2 from Posit (auto-detects arm64 or amd64)
+RUN apt-get update \
+    && ARCH=$(dpkg --print-architecture) \
+    && curl -fsSL https://cdn.posit.co/r/debian-12/pkgs/r-4.4.2_1_${ARCH}.deb -o /tmp/r-4.4.2.deb \
+    && apt-get install -y --no-install-recommends /tmp/r-4.4.2.deb \
     && rm /tmp/r-4.4.2.deb \
     && rm -rf /var/lib/apt/lists/*
 
