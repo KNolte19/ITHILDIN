@@ -11,7 +11,6 @@ import json
 import os
 
 import numpy as np
-import numpy as np
 import pandas as pd
 from config_loader import get_config
 
@@ -219,7 +218,7 @@ def save_image_with_landmarks(image, save_path, landmarks, semilandmarks):
     Save an image with landmarks and semilandmarks visualized as overlays.
 
     Creates a visualization showing the input image with landmarks (red dots)
-    and semilandmarks (blue dots) overlaid at their predicted positions.
+    and semilandmarks (cyan dots) overlaid at their predicted positions.
     Uses PIL for rendering to avoid any matplotlib backend / display dependency.
 
     Args:
@@ -238,15 +237,76 @@ def save_image_with_landmarks(image, save_path, landmarks, semilandmarks):
     """
     from PIL import Image as PILImage, ImageDraw
 
-    # Convert float [0,1] image to uint8 [0,255]
-    img_uint8 = (np.clip(image, 0, 1) * 255).astype(np.uint8)
+    def _prepare_image_uint8_rgb(image_array):
+        image_array = np.asarray(image_array)
 
-    # Ensure RGB for drawing coloured dots
-    if img_uint8.ndim == 2:
-        img_uint8 = np.stack([img_uint8] * 3, axis=-1)
-    elif img_uint8.shape[2] == 1:
-        img_uint8 = np.concatenate([img_uint8] * 3, axis=-1)
+        if image_array.ndim == 2:
+            image_array = image_array[:, :, np.newaxis]
+        elif image_array.ndim == 3:
+            pass
+        else:
+            image_array = np.squeeze(image_array)
+            if image_array.ndim == 2:
+                image_array = image_array[:, :, np.newaxis]
+            elif image_array.ndim != 3:
+                raise ValueError("Unsupported image shape for save_image_with_landmarks")
 
+        if image_array.shape[2] == 1:
+            image_array = np.repeat(image_array, 3, axis=2)
+        elif image_array.shape[2] >= 3:
+            image_array = image_array[:, :, :3]
+        else:
+            raise ValueError("Unsupported channel count for save_image_with_landmarks")
+
+        if np.issubdtype(image_array.dtype, np.floating):
+            if np.nanmax(image_array) <= 1.0:
+                image_array = image_array * 255.0
+            image_array = np.nan_to_num(image_array, nan=0.0, posinf=255.0, neginf=0.0)
+        else:
+            image_array = np.nan_to_num(image_array, nan=0.0, posinf=255.0, neginf=0.0)
+
+        return np.clip(image_array, 0, 255).astype(np.uint8)
+
+    def _prepare_xy_points(coords):
+        coords = np.asarray(coords)
+        if coords.size == 0:
+            return np.empty((0, 2), dtype=np.float64)
+
+        coords = np.squeeze(coords)
+        if coords.ndim == 1:
+            if coords.shape[0] != 2:
+                return np.empty((0, 2), dtype=np.float64)
+            coords = coords.reshape(1, 2)
+        elif coords.ndim != 2:
+            return np.empty((0, 2), dtype=np.float64)
+
+        if coords.shape[1] == 2:
+            return coords.astype(np.float64, copy=False)
+        if coords.shape[0] == 2:
+            return coords.T.astype(np.float64, copy=False)
+        return np.empty((0, 2), dtype=np.float64)
+
+    def _draw_point(draw_ctx, x, y, radius, color, width, height):
+        if not np.isfinite(x) or not np.isfinite(y):
+            return
+
+        cx = int(round(float(x)))
+        cy = int(round(float(y)))
+        if cx < 0 or cx >= width or cy < 0 or cy >= height:
+            return
+
+        radius = max(1, int(radius))
+        x0 = max(cx - radius, 0)
+        y0 = max(cy - radius, 0)
+        x1 = min(cx + radius, width - 1)
+        y1 = min(cy + radius, height - 1)
+
+        if x1 < x0 or y1 < y0:
+            return
+
+        draw_ctx.ellipse([x0, y0, x1, y1], fill=color)
+
+    img_uint8 = _prepare_image_uint8_rgb(image)
     pil_img = PILImage.fromarray(img_uint8, mode="RGB")
 
     # Save raw image (no landmarks)
@@ -258,35 +318,20 @@ def save_image_with_landmarks(image, save_path, landmarks, semilandmarks):
     draw = ImageDraw.Draw(overlay)
 
     h, w = img_uint8.shape[:2]
-    lm_radius  = max(3, int(min(h, w) * 0.008))   # scale dot size to image
-    slm_radius = max(2, int(min(h, w) * 0.005))
+    min_dim = max(1, min(h, w))
+    lm_radius = max(1, int(round(min_dim * 0.006)))
+    slm_radius = max(1, int(round(min_dim * 0.004)))
 
-    landmarks = np.array(landmarks)
-    semilandmarks = np.array(semilandmarks)
+    lm_points = _prepare_xy_points(landmarks)
+    slm_points = _prepare_xy_points(semilandmarks)
 
     # Semilandmarks first so landmarks render on top
-    for x, y in zip(semilandmarks[0], semilandmarks[1]):
-        if np.isnan(x) or np.isnan(y):
-            continue
-        cx, cy = int(round(x)), int(round(y))
-        draw.ellipse(
-            [cx - slm_radius, cy - slm_radius, cx + slm_radius, cy + slm_radius],
-            fill=(0, 255, 255),        # cyan
-        )
+    for x, y in slm_points:
+        _draw_point(draw, x, y, slm_radius, (0, 255, 255), w, h)
 
-    for x, y in zip(landmarks[0], landmarks[1]):
-        if np.isnan(x) or np.isnan(y):
-            continue
-        cx, cy = int(round(x)), int(round(y))
-        # White outline
-        draw.ellipse(
-            [cx - lm_radius - 1, cy - lm_radius - 1, cx + lm_radius + 1, cy + lm_radius + 1],
-            fill=(255, 255, 255),
-        )
-        draw.ellipse(
-            [cx - lm_radius, cy - lm_radius, cx + lm_radius, cy + lm_radius],
-            fill=(255, 0, 0),          # red
-        )
+    for x, y in lm_points:
+        _draw_point(draw, x, y, lm_radius + 1, (255, 255, 255), w, h)
+        _draw_point(draw, x, y, lm_radius, (255, 0, 0), w, h)
 
     overlay.save(save_path)
 
