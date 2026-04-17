@@ -242,9 +242,7 @@ def save_image_with_landmarks(image, save_path, landmarks, semilandmarks):
 
         if image_array.ndim == 2:
             image_array = image_array[:, :, np.newaxis]
-        elif image_array.ndim == 3:
-            pass
-        else:
+        elif image_array.ndim != 3:
             image_array = np.squeeze(image_array)
             if image_array.ndim == 2:
                 image_array = image_array[:, :, np.newaxis]
@@ -258,12 +256,10 @@ def save_image_with_landmarks(image, save_path, landmarks, semilandmarks):
         else:
             raise ValueError("Unsupported channel count for save_image_with_landmarks")
 
-        if np.issubdtype(image_array.dtype, np.floating):
-            if np.nanmax(image_array) <= 1.0:
-                image_array = image_array * 255.0
-            image_array = np.nan_to_num(image_array, nan=0.0, posinf=255.0, neginf=0.0)
-        else:
-            image_array = np.nan_to_num(image_array, nan=0.0, posinf=255.0, neginf=0.0)
+        is_float = np.issubdtype(image_array.dtype, np.floating)
+        image_array = np.nan_to_num(image_array, nan=0.0, posinf=255.0, neginf=0.0)
+        if is_float and image_array.size > 0 and image_array.max() <= 1.0:
+            image_array = image_array * 255.0
 
         return np.clip(image_array, 0, 255).astype(np.uint8)
 
