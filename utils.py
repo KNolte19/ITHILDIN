@@ -10,9 +10,6 @@ This module provides helper functions for:
 import json
 import os
 
-import matplotlib
-matplotlib.use("Agg")            # Use non-interactive backend (required when no display is available)
-import matplotlib.pyplot as plt   # ← now initialises with Agg
 import numpy as np
 import numpy as np
 import pandas as pd
@@ -217,94 +214,81 @@ def json_to_dataframe(
     return landmark_df
 
 
-def plot_image_with_landmarks(file_path):
-    """
-    Plot an image with its predicted landmarks overlaid.
-
-    Note: This function requires access to run_prediction which may not be
-    in scope. Consider refactoring if needed for standalone use.
-
-    Args:
-        file_path (str): Path to the image file to process and visualize
-
-    Returns:
-        None. Displays the plot using matplotlib.
-    """
-    data, image, segmentation_sigmoid, repaired_skeleton, skeleton = run_prediction(
-        file_path, return_arr=True
-    )
-
-    plt.imshow(image)
-    plt.imshow(repaired_skeleton, alpha=0.5)
-    plt.title(str(data["status"]))
-    plt.axis("off")
-
-    # Plot the landmarks with text numbers
-    for i, (x, y) in enumerate(np.array(data["landmark_coords"]).T):
-        plt.plot(x * 640, y * 320, "ro")  # Plot landmark point
-        plt.text(
-            x * 640, y * 320, str(i + 1), color="yellow", fontsize=12
-        )  # Annotate with landmark number
-
-    plt.show()
-
-
 def save_image_with_landmarks(image, save_path, landmarks, semilandmarks):
     """
     Save an image with landmarks and semilandmarks visualized as overlays.
 
     Creates a visualization showing the input image with landmarks (red dots)
     and semilandmarks (blue dots) overlaid at their predicted positions.
+    Uses PIL for rendering to avoid any matplotlib backend / display dependency.
 
     Args:
-        image (np.ndarray): Input image array (H x W for grayscale or H x W x C for color).
+        image (np.ndarray): Input image array, float32 in [0, 1] range,
+                            shape (H, W) for grayscale or (H, W, C) for color.
         save_path (str): Output file path for saving the visualization.
         landmarks (np.ndarray): Shape (2, N) with landmark coordinates.
-                                Row 0 = X coordinates (normalized to [0, 1]).
-                                Row 1 = Y coordinates (normalized to [0, 1]).
+                                Row 0 = X coordinates (pixel space).
+                                Row 1 = Y coordinates (pixel space).
         semilandmarks (np.ndarray): Shape (2, M) with semilandmark coordinates.
-                                    Row 0 = X coordinates (normalized to [0, 1]).
-                                    Row 1 = Y coordinates (normalized to [0, 1]).
+                                    Row 0 = X coordinates (pixel space).
+                                    Row 1 = Y coordinates (pixel space).
 
     Returns:
-        None. Saves the figure to the specified path.
+        None. Saves the figures to the specified paths.
     """
-    # Create figure without landmarks and save it
-    plt.figure(figsize=(20, 10))
-    plt.imshow(image, cmap="gray")
-    plt.axis("off")
-    plt.savefig(save_path.replace(".png", "_raw.png"), bbox_inches="tight", pad_inches=0)
-    plt.close()   
+    from PIL import Image as PILImage, ImageDraw
 
-    # Create figure for landmarks overlay
-    plt.figure(figsize=(20, 10))
-    plt.imshow(image, cmap="gray")
+    # Convert float [0,1] image to uint8 [0,255]
+    img_uint8 = (np.clip(image, 0, 1) * 255).astype(np.uint8)
 
-    # Plot landmarks (red)
-    # landmarks[0] = X coords, landmarks[1] = Y coords
+    # Ensure RGB for drawing coloured dots
+    if img_uint8.ndim == 2:
+        img_uint8 = np.stack([img_uint8] * 3, axis=-1)
+    elif img_uint8.shape[2] == 1:
+        img_uint8 = np.concatenate([img_uint8] * 3, axis=-1)
+
+    pil_img = PILImage.fromarray(img_uint8, mode="RGB")
+
+    # Save raw image (no landmarks)
+    raw_path = save_path.replace(".png", "_raw.png")
+    pil_img.save(raw_path)
+
+    # Draw landmarks and semilandmarks onto a copy
+    overlay = pil_img.copy()
+    draw = ImageDraw.Draw(overlay)
+
+    h, w = img_uint8.shape[:2]
+    lm_radius  = max(3, int(min(h, w) * 0.008))   # scale dot size to image
+    slm_radius = max(2, int(min(h, w) * 0.005))
+
     landmarks = np.array(landmarks)
-    plt.scatter(
-        landmarks[0],
-        landmarks[1], 
-        c="red",
-        edgecolors="white",
-        s=100,
-    )
-
-    # Plot semilandmarks (blue)
-    # semilandmarks[0] = X coords, semilandmarks[1] = Y coords
     semilandmarks = np.array(semilandmarks)
-    plt.scatter(
-        semilandmarks[0],
-        semilandmarks[1],
-        c="cyan",
-        s=50,
-    )
 
-    # Save figure without axes or padding
-    plt.axis("off")
-    plt.savefig(save_path, bbox_inches="tight", pad_inches=0)
-    plt.close()
+    # Semilandmarks first so landmarks render on top
+    for x, y in zip(semilandmarks[0], semilandmarks[1]):
+        if np.isnan(x) or np.isnan(y):
+            continue
+        cx, cy = int(round(x)), int(round(y))
+        draw.ellipse(
+            [cx - slm_radius, cy - slm_radius, cx + slm_radius, cy + slm_radius],
+            fill=(0, 255, 255),        # cyan
+        )
+
+    for x, y in zip(landmarks[0], landmarks[1]):
+        if np.isnan(x) or np.isnan(y):
+            continue
+        cx, cy = int(round(x)), int(round(y))
+        # White outline
+        draw.ellipse(
+            [cx - lm_radius - 1, cy - lm_radius - 1, cx + lm_radius + 1, cy + lm_radius + 1],
+            fill=(255, 255, 255),
+        )
+        draw.ellipse(
+            [cx - lm_radius, cy - lm_radius, cx + lm_radius, cy + lm_radius],
+            fill=(255, 0, 0),          # red
+        )
+
+    overlay.save(save_path)
 
 
 def generate_sliders(family="mosquito"):
