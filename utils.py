@@ -11,13 +11,12 @@ import json
 import os
 
 import matplotlib
-import matplotlib.pyplot as plt
+matplotlib.use("Agg")            # Use non-interactive backend (required when no display is available)
+import matplotlib.pyplot as plt   # ← now initialises with Agg
+import numpy as np
 import numpy as np
 import pandas as pd
 from config_loader import get_config
-
-# Use non-interactive backend (required when no display is available)
-matplotlib.use("Agg")
 
 
 def json_to_dataframe(
@@ -275,6 +274,7 @@ def save_image_with_landmarks(image, save_path, landmarks, semilandmarks):
     plt.imshow(image, cmap="gray")
     plt.axis("off")
     plt.savefig(save_path.replace(".png", "_raw.png"), bbox_inches="tight", pad_inches=0)
+    plt.close()   
 
     # Create figure for landmarks overlay
     plt.figure(figsize=(20, 10))
