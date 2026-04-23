@@ -386,13 +386,17 @@ def download_csv():
     Returns:
         file: CSV file as download attachment
     """
-    if session["identifier"] == "example":
+    identifier = session.get("identifier")
+    if not identifier:
+        return "Session expired or missing. Please upload again.", 400
+
+    if identifier == "example":
         csv_file_path = os.path.join(
             app.config["STATIC_FOLDER"], "example", "coordinates_example.csv"
         )
     else:
         csv_file_path = os.path.join(
-            session["request_path"], f"coordinates_{session['identifier']}.csv"
+            session["request_path"], f"coordinates_{identifier}.csv"
         )
     return send_file(csv_file_path, as_attachment=True)
 
@@ -410,14 +414,18 @@ def download_tps():
     """
     # Copy tps from analysis folder to request folder for download
     analysis_tps = os.path.join(app.root_path, "analysis", "temp", "input.tps")
+    
+    identifier = session.get("identifier")
+    if not identifier:
+        return "Session expired or missing. Please upload again.", 400
 
-    if session["identifier"] == "example":
+    if identifier == "example":
         tps_file_path = os.path.join(
             app.config["STATIC_FOLDER"], "example", "coordinates_example.tps"
         )
     else:
         tps_file_path = os.path.join(
-            session["request_path"], f"coordinates_{session['identifier']}_semi.tps"
+            session["request_path"], f"coordinates_{identifier}_semi.tps"
         )
 
     shutil.copy(analysis_tps, tps_file_path)
@@ -439,12 +447,16 @@ def download_folder():
     Note:
         Temporary ZIP file is automatically cleaned up after sending
     """
-    if session["identifier"] == "example":
+    identifier = session.get("identifier")
+    if not identifier:
+        return "Session expired or missing. Please upload again.", 400
+
+    if identifier == "example":
         folder_path = os.path.join(app.config["STATIC_FOLDER"], "example")
     else:
         folder_path = session["request_path"]
 
-    zip_file_name = f"request_{session['identifier']}.zip"
+    zip_file_name = f"request_{identifier}.zip"
     zip_path = os.path.join(tempfile.gettempdir(), zip_file_name)
 
     try:

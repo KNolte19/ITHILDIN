@@ -159,6 +159,11 @@ def repair_skeleton(skeleton, pt1, pt2, segmentation_logit, coordinate_set, skel
     # Exclude all other skeleton paths
     skeleton_paths = {k: v for k, v in skeleton_paths.items() if k != (pt1, pt2)}
     all_path_coords = set((x, y) for group in skeleton_paths.values() for (x, y) in group)
+
+    # Check if all path coordinates are valid
+    if not all_path_coords:
+        return skeleton, "Error"
+
     forbidden = np.array(list(get_neighbors(get_neighbors(all_path_coords))))
     cost_map[forbidden[:, 0], forbidden[:, 1]] = cost_map.max() #TODO
 
@@ -218,6 +223,11 @@ def check_skeleton(skeleton, consensus_coord, segmentation_logit):
     # For array indexing, we need (row, col) = (y, x) format
     original_coordinate_set = set(zip(coord_y.astype(int), coord_x.astype(int)))
 
+    # Check if coordinate set is valid
+    coordinate_array = np.asarray(list(original_coordinate_set))
+    if coordinate_array.size == 0 or coordinate_array.ndim != 2 or coordinate_array.shape[1] != 2:
+        return skeleton, "Failed Repair", (None, None)
+
     # Check all required connections
     for connection in CONFIG["allowed_connections"]:
         pt1 = scale_coord(consensus_coord[0][connection[0]], consensus_coord[1][connection[0]])
@@ -237,7 +247,7 @@ def check_skeleton(skeleton, consensus_coord, segmentation_logit):
         skeleton, status = repair_skeleton(skeleton, pt1, pt2, segmentation_logit, coordinate_set, skeleton_paths)
 
         if status == "Error":
-            return skeleton, "Failed Repair", (connection[0], connection[1])
+            return skeleton, "Failed Repair", (pt1, pt2)
 
         status = "Repaired"
         coordinate_set = original_coordinate_set.copy()
@@ -254,6 +264,6 @@ def check_skeleton(skeleton, consensus_coord, segmentation_logit):
             check, _ = find_skeleton_path(skeleton, pt1, pt2, coordinate_set, return_shortest_path=True)
             if check:
                 status = "Failed Repair"
-                return skeleton, status, (connection[0], connection[1])
+                return skeleton, status, (pt1, pt2)
 
     return skeleton, status, None

@@ -148,12 +148,16 @@ def run_prediction(file, save_path="test", family="mosquito", timing_info=None, 
 
     # Step 7: Generate semilandmarks
     step_start = time.time()
-    semi_landmarks = landmark_processing.create_semi_landmarks(
-        consensus_coord, repaired_skeleton, num_landmarks_ref=num_landmarks_ref
-    )
+    if status != "Failed Repair":
+        semi_landmarks = landmark_processing.create_semi_landmarks(
+            consensus_coord, repaired_skeleton, num_landmarks_ref=num_landmarks_ref
+        )
 
-    # If semilandmark generation failed (often happens when two points are too close), fill with NaNs and update status
-    if len(semi_landmarks[0]) != np.sum(num_landmarks_ref):
+        # If semilandmark generation failed (often happens when two points are too close), fill with NaNs and update status
+        if len(semi_landmarks[0]) != np.sum(num_landmarks_ref):
+            semi_landmarks = np.full((np.sum(num_landmarks_ref), 2), np.nan)
+            status = "Failed Repair"
+    else:
         semi_landmarks = np.full((np.sum(num_landmarks_ref), 2), np.nan)
         
     timing_info["semilandmark_generation"] = time.time() - step_start
@@ -326,10 +330,10 @@ def get_landmark_predictions(dataframe, session, has_classifier=False):
             for species in CONFIG["classifier_species_list"]:
                 cnn_score = cnn_map.get(species, 0)
                 lda_score = lda_map.get(species, 0)
-                average_map[species] = (cnn_score + lda_score) / 2
+                average_map[species] = (cnn_score - 0.05 + lda_score) / 2 # Subtract 0.05 from CNN score to give slightly more weight to LDA prediction
 
             average_predicted_species = max(average_map, key=average_map.get)
-            average_predicted_score = average_map[average_predicted_species]
+            average_predicted_score = average_map[average_predicted_species] 
 
             data["ensemble_prediction"] = {
                 "top": str(average_predicted_species),
