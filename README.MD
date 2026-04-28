@@ -122,12 +122,12 @@ First retrain the segmentation model to segment the wings of your new family, th
 If you use ITHILDIN in your research, please cite:
 
 ```
-[Citation to be added]
+Nolte, K., Baumbach, J., Kollmannsberger, P., Sauer, F. G., & Luehken, R. (2026). Automated landmark and semilandmark annotation for wing geometric morphometrics in Diptera using deep learning. Bioinformatics. https://doi.org/10.64898/2026.04.17.719146
 ```
 
 ## License
 
-CC BY-NC 4.0 License
+AGPLv3
 
 ## Contact
 

@@ -17,7 +17,7 @@
                 <h1>ITHILDIN</h1>
                 <h2>Integrated Tool for Homologous Image Landmark Detection in Insects using Neural networks</h2>
                 <p class="tooltip-text"> This tool is designed for Diptera identification and geometric morphometric analysis based on uploaded images of wings.
-                    We refer to the <a href="https://doi.org/10.1371/journal.pcbi.1013435">PLACEHOLDER FOR PUBLICATION</a> for further information.
+                    We refer to this <a href="https://www.biorxiv.org/content/10.64898/2026.04.17.719146v1">preprint</a> for further information.
                     The system uses AI to annotate landmark and semilandmarks on the vein patterns of the wings of Diptera. Currently it is trained for Culicidae, Drosophila and Glossina.
                     In addition we utilise the CNN provided by <a href="https://doi.org/10.1371/journal.pcbi.1013435">BALROG</a> to predict the species of mosquito.
                     BALROG is trained on <a href="/display_other_pdf">34 mosquito species</a> while some species are summarized under the label <a href="/display_other_pdf">"other"</a>.
@@ -54,6 +54,9 @@
                 <div class="image-container">
                     <img src="{{ url_for('static', filename='images/PIPELINE_scheme.jpg') }}" alt="Wing Image Example">
                 </div> 
+                <p style="color: #856404; background-color: #fff3cd; padding: 10px; border-radius: 3px; margin-top: 10px;">
+                    <strong>Note:</strong> Species identification is only available for mosquito wings. The models for drosophila and tsetse are intended for demonstration only. Due to training on a small number of samples, their predictions may be unreliable and should be interpreted with caution.
+                </p>
 
                 <form action="/upload_folder" method="POST" enctype="multipart/form-data" id="uploadForm">
                     <label for="familySelect">Select Insect Family:</label>
