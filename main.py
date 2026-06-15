@@ -27,7 +27,7 @@ from transform import (
 import utils
 
 
-def run_prediction(file, save_path="test", family="mosquito", timing_info=None, stream=True, save_image=True, num_landmarks_ref="default"):
+def run_prediction(file, save_path="test", family="mosquito", timing_info=None, stream=True, save_image=True, num_landmarks_ref="default", image_id=None, bg_session=None):
     """
     Run complete wing analysis pipeline on an input image.
 
@@ -75,7 +75,7 @@ def run_prediction(file, save_path="test", family="mosquito", timing_info=None, 
     # Step 1: Image preprocessing
     step_start = time.time()
     image_aligned, mask_aligned, mask = image_processing.process_image(
-        file, from_stream=stream
+        file, from_stream=stream, bg_session=bg_session
     )
 
     image_ithildin = image_processing.transform_image(
@@ -181,6 +181,7 @@ def run_prediction(file, save_path="test", family="mosquito", timing_info=None, 
     # Prepare output data
     data = {
         "file_name": str(image_save_path),
+        "image_id": image_id,
         "status": str(status),
         "failed_coordinate": (
             None if failed_coord is None else np.array(failed_coord).tolist()

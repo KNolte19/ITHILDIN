@@ -310,7 +310,7 @@ def CLAHE(image, clip_limit=0.1, nbins=128, strong=False):
     return image
 
 
-def process_image(file, from_stream=False, background_padding=0):
+def process_image(file, from_stream=False, background_padding=0, bg_session=None):
     """
     Complete image preprocessing pipeline.
 
@@ -320,6 +320,7 @@ def process_image(file, from_stream=False, background_padding=0):
         file: Either file path (str) or file stream object
         from_stream (bool): If True, treat file as stream. Default False.
         background_padding (int): Pixels to pad around bounding box. Default 0.
+        bg_session: Optional rembg session for faster repeated calls.
 
     Returns:
         tuple: (aligned_image, aligned_mask, original_mask)
@@ -333,7 +334,7 @@ def process_image(file, from_stream=False, background_padding=0):
     else:
         image_raw = robust_load_image(file)
 
-    image_rembg, mask = remove_background(image_raw)
+    image_rembg, mask = remove_background(image_raw, bg_session=bg_session)
     image_aligned, mask_aligned = align(
         image_rembg, mask, background_padding=background_padding
     )

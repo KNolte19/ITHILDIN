@@ -63,6 +63,7 @@ def json_to_dataframe(
         for file in files
         if file.endswith(".json") and "._" not in file
     ]
+    json_file_paths = sorted(json_file_paths)
 
     # Determine coordinate column names based on type
     if coordinate_type == "scaled":
@@ -81,6 +82,7 @@ def json_to_dataframe(
 
     # Initialize DataFrame for landmark data
     base_columns = [
+        "Image_ID",
         "File",
         "Status",
         "Centroid",
@@ -104,6 +106,7 @@ def json_to_dataframe(
                 json_data = json.load(f)
 
             row = [
+                json_data.get("image_id", f"img-{i+1}"),
                 json_data["file_name"],
                 json_data["status"],
                 json_data["scaled_centroid"],
@@ -127,9 +130,10 @@ def json_to_dataframe(
             print(df.columns)
             # Create row with NaN values for failed processing
             # Use safe access in case json_data wasn't loaded
+            image_id_val = json_data.get("image_id", f"img-{i+1}") if "json_data" in locals() else f"img-{i+1}"
             file_name = json_data.get("file_name", path) if "json_data" in locals() else path
             status = json_data.get("status", "Error") if "json_data" in locals() else "Error"
-            df.loc[i] = [file_name, status] + [np.nan] * (len(df.columns) - 2)
+            df.loc[i] = [image_id_val, file_name, status] + [np.nan] * (len(df.columns) - 3)
 
     landmark_df = df.copy()
 
@@ -154,6 +158,7 @@ def json_to_dataframe(
                 semi_coords = list(np.array(json_data[semi_coord_column]).flatten())
                 if len(semi_coords) == int(N_semilandmarks * 2):
                     row = [
+                        json_data.get("image_id", f"img-{i+1}"),
                         json_data["file_name"],
                         json_data["status"],
                         json_data["scaled_centroid"],
@@ -174,13 +179,14 @@ def json_to_dataframe(
 
                 else:
                     semilandmark_df.loc[i] = [
+                        json_data.get("image_id", f"img-{i+1}"),
                         json_data["file_name"],
                         json_data["status"],
-                    ] + [np.nan] * (len(semilandmark_df.columns) - 2)
+                    ] + [np.nan] * (len(semilandmark_df.columns) - 3)
             else:
-                semilandmark_df.loc[i] = [json_data["file_name"], json_data["status"]] + [
+                semilandmark_df.loc[i] = [json_data.get("image_id", f"img-{i+1}"), json_data["file_name"], json_data["status"]] + [
                     np.nan
-                ] * (len(semilandmark_df.columns) - 2)
+                ] * (len(semilandmark_df.columns) - 3)
 
         # Merge semilandmark coordinates into main DataFrame
         semilandmark_coords = semilandmark_df[
