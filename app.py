@@ -78,9 +78,9 @@ def get_identifier():
     Generate a unique identifier for each user request.
 
     Returns:
-        str: Random 10-character identifier (UUID prefix)
+        str: Random 6-character identifier (UUID-based, alphanumeric)
     """
-    return str(uuid.uuid4())[:11].replace("-", "")
+    return str(uuid.uuid4()).replace("-", "")[:6]
 
 
 @app.route("/search_session", methods=["POST"])
@@ -99,7 +99,7 @@ def search_session():
                              error="Please enter a session ID"), 400
 
     # Validate session_id to only allow safe alphanumeric characters (prevents path traversal)
-    if not session_id.isalnum() or len(session_id) > 64:
+    if not session_id.isalnum() or len(session_id) > 10:
         return render_template("upload.html",
                              families=list(AVAILABLE_FAMILIES.keys()),
                              error="Invalid session ID format. Please check the ID and try again."), 400
@@ -254,7 +254,8 @@ def upload_folder():
 
     # Run ITHILDIN prediction pipeline on each image with family parameter
     for i, file in enumerate(files):
-        main.run_prediction(file, save_path=processed_file_name_list[i], family=selected_family)
+        image_id = f"{session['identifier']}-{str(i+1).zfill(2)}"
+        main.run_prediction(file, save_path=processed_file_name_list[i], family=selected_family, image_id=image_id, bg_session=bgremove_session)
 
     app.logger.info(f"Processing complete for session {session['identifier']} ({len(files)} images)")
 
