@@ -27,7 +27,7 @@ import utils
 from config_loader import AVAILABLE_FAMILIES
 
 # Initialize background removal session
-bgremove_session = new_session()
+bgremove_session = new_session("u2netp")
 
 # Flask app configuration
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))

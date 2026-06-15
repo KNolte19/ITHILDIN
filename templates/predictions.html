@@ -41,6 +41,7 @@
       <thead>
         <tr>
           <th>Image Name</th>
+          <th>Image_ID</th>
           <th>Image</th>
           {% if has_classifier %}
           <th>Species Prediction</th>
@@ -55,6 +56,7 @@
         {% for prediction in predictions %}
           <tr>
             <td>{{ prediction.File_Name }}</td>
+            <td>{{ prediction.Image_ID }}</td>
 
             <td><img src="{{ prediction.File}}" alt="Image"></td>
 

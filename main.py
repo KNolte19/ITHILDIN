@@ -213,7 +213,6 @@ def run_prediction(file, save_path="test", family="mosquito", timing_info=None, 
         )
 
     timing_info["file_saving"] = time.time() - step_start
-    
     timing_info["total_time"] = time.time() - pipeline_start
     
     return timing_info
@@ -355,6 +354,7 @@ def prepare_download(prediction_df, prediction_lm_df, prediction_slm_df, has_cla
         "File_Name",
         "File",
         "Status",
+        "Image_ID",
     ]
 
     if has_classifier:    
@@ -366,7 +366,7 @@ def prepare_download(prediction_df, prediction_lm_df, prediction_slm_df, has_cla
                 "LM_Predicted_Taxa",
                 "LM_Predicted_Score",
                 "ENS_Predicted_Taxa",
-                "ENS_Predicted_Score"
+                "ENS_Predicted_Score",
         ])
 
     # Save CSV files for download 
