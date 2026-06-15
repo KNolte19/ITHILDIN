@@ -166,11 +166,60 @@ TSETSE_CONFIG = {
     "semilandmark_reference_path": "analysis/LDA_reference_dataframe_semilandmarks.csv",
 }
 
+# ========== Psychodidae Configuration ==========
+PSYCHODIDAE_CONFIG = { 
+    "family": "psychodidae",
+    "has_classification": False,
+    "root_path": _ROOT_PATH,
+    "device": "cpu",
+    "segmentation_image_size": (640, 320),
+    "landmark_image_size": (480, 240),
+    "classifier_image_size": (480, 240),
+    "model_paths": {
+        "segmentation": "training/models_psycho/psycho_segmentation_weights_fold-0.pth",
+        "landmark": "training/models_psycho/psycho_landmark_weights_fold-4.pth", 
+        "classification": "training/models_mosquito/mosquito_classifier_1_evaluation.pth" # Placeholder, not used 
+    },
+    "N_landmarks": 12, 
+    "N_semilandmarks": 49, 
+    "index_most_left_landmark": 0, 
+    "index_most_right_landmark": 4, 
+    "index_most_upper_landmark": 0, 
+    "index_most_lower_landmark": 7, 
+    "allowed_connections": [
+        (0,1),
+        (1,2),(1,11),
+        (2,3),(2,11),
+        (3,4),(3,10),
+        (4,5),
+        (5,6),(5,9),
+        (6,7),(6,9),
+        (7,8),
+        (10,11),
+    ],
+    "not_allowed_connections": [(4,10), (4,11), (4,9),(7,9),(8,9),(9,10),(9,11)], 
+    "semilandmarks_per_connection": [
+        3,
+        3,3,
+        3,5,
+        1,8,
+        1,
+        3,5,
+        3,5,
+        3,
+        3,
+    ],
+    "classifier_species_list": [], # Placeholder, not used 
+    "landmark_reference_path": "analysis/LDA_reference_dataframe_landmarks.csv", # Placeholder, not used 
+    "semilandmark_reference_path": "analysis/LDA_reference_dataframe_semilandmarks.csv", # Placeholder, not used 
+}
+
 # Available insect families
 AVAILABLE_FAMILIES = {
     "mosquito": MOSQUITO_CONFIG,
     "drosophila": DROSOPHILA_CONFIG,
     "tsetse": TSETSE_CONFIG,
+    "psychodidae": PSYCHODIDAE_CONFIG,
 }
 
 # Default configuration
