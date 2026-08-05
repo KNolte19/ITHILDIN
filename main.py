@@ -10,6 +10,7 @@ This module provides the core functionality for:
 import json
 import os
 import time
+from datetime import datetime, timezone
 
 import numpy as np
 import pandas as pd
@@ -58,6 +59,7 @@ def run_prediction(file, save_path="test", family="mosquito", timing_info=None, 
         timing_info = {}
     
     pipeline_start = time.time()
+    processing_date = datetime.now(timezone.utc).isoformat()
     
     # Update global CONFIG for this family (so transform modules use correct config)
     update_config(family)
@@ -178,11 +180,17 @@ def run_prediction(file, save_path="test", family="mosquito", timing_info=None, 
     orientation = landmark_analysis.orientation(consensus_coord)
     timing_info["morphometric_analysis"] = time.time() - step_start
 
+    # Total runtime is everything up to this point (file saving comes after)
+    total_runtime = time.time() - pipeline_start
+
     # Prepare output data
     data = {
         "file_name": str(image_save_path),
         "image_id": image_id,
         "status": str(status),
+        "processing_date": processing_date,
+        "runtime_seconds": round(total_runtime, 3),
+        "device": CONFIG["device"],
         "failed_coordinate": (
             None if failed_coord is None else np.array(failed_coord).tolist()
         ),

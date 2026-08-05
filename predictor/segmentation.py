@@ -12,9 +12,6 @@ import torch.nn as nn
 
 from config_loader import get_config
 
-# Set default device
-device = torch.device("mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu")
-
 class AddCoords(nn.Module):
     """
     A layer that appends normalized x and y coordinate channels (and optionally a radial channel)
@@ -101,6 +98,7 @@ def get_model(family="mosquito", pretrained=True):
         nn.Module: Fully constructed segmentation model.
     """
     config = get_config(family)
+    device = torch.device(config["device"])
     model_path = config["model_paths"]["segmentation"]
     
     # Create the base Unet++ model with EfficientNet-b0 encoder

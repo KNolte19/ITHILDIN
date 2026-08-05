@@ -9,9 +9,6 @@ import torch
 
 from config_loader import get_config
 
-# Set default device to CPU (can be overridden in CONFIG)
-device = torch.device("mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu")
-
 
 def get_model(family="mosquito"):
     """
@@ -32,6 +29,7 @@ def get_model(family="mosquito"):
         because the model architecture is saved along with the weights.
     """
     config = get_config(family)
+    device = torch.device(config["device"])
     model = torch.load(
         config["model_paths"]["classification"],
         weights_only=False,
