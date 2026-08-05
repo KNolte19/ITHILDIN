@@ -18,9 +18,6 @@ from torch import nn
 
 from config_loader import get_config
 
-# Set default device
-device = torch.device("mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu")
-
 # ---------------------- Custom Layers ---------------------- #
 class CoordConv(nn.Module):
     """
@@ -158,6 +155,7 @@ def get_model(family="mosquito"):
         Hourglass: The landmark detection model with loaded weights.
     """
     config = get_config(family)
+    device = torch.device(config["device"])
     N_landmarks = config["N_landmarks"]
     model_path = config["model_paths"]["landmark"]
     HG_blocks = 4  # Number of hourglass levels
@@ -186,7 +184,7 @@ def load_partial_weights(model, model_path, ignored_keys=("output_block.1.weight
         checkpoint_path (str): Path to the .pt or .pth file with weights.
         ignored_keys (tuple): Keys to ignore (e.g., final output layer).
     """
-    state_dict = torch.load(model_path, map_location=device)
+    state_dict = torch.load(model_path, map_location="cpu")
     model_dict = model.state_dict()
 
     # Filter out keys to ignore

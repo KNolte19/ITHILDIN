@@ -27,7 +27,17 @@ from rembg import remove
 
 from config import CONFIG
 
-def robust_load_image(file_path, force_resave_tiff=True):
+# Pre-computed disk structuring element for median filtering (avoids recomputing on every call)
+_MEDIAN_DISK = skimage.morphology.disk(2)
+
+# Maximum pixel dimension for the long edge before background removal.
+# Large TIF files are downscaled to this size prior to rembg processing, which
+# dramatically reduces memory use and rembg runtime. The final landmark/segmentation
+# images are always resized to the model-specific sizes afterwards, so the
+# transformation result is identical.
+_REMBG_MAX_LONG_EDGE = 1024
+
+def robust_load_image(file_path, force_resave_tiff=True, max_long_edge=_REMBG_MAX_LONG_EDGE):
     """
     Loads an image with robust TIFF support.
 
@@ -36,9 +46,17 @@ def robust_load_image(file_path, force_resave_tiff=True):
 
     Ensures the returned array is HxWx3 (repeats grayscale channel or strips alpha).
 
+    If the image's longest edge exceeds *max_long_edge*, the image is downscaled
+    proportionally using bilinear interpolation before being returned.  This
+    reduces memory use and speeds up the background-removal step without
+    changing the downstream processing result (models always resize to their
+    own target sizes later in the pipeline).
+
     Args:
         file_path (str): Path to the image file.
         force_resave_tiff (bool): Whether to overwrite and resave non-TIFFs as TIFF.
+        max_long_edge (int): Downscale so the longest side does not exceed this
+            value.  Set to 0 or None to disable downscaling.  Default 1024.
 
     Returns:
         np.ndarray: The loaded image as a NumPy array with 3 channels.
@@ -71,6 +89,18 @@ def robust_load_image(file_path, force_resave_tiff=True):
         img = np.stack([img, img, img], axis=-1)
     elif img.ndim == 3 and img.shape[2] == 4:
         img = img[:, :, :3]
+
+    # Downscale large images to speed up background removal
+    if max_long_edge:
+        h, w = img.shape[:2]
+        long_edge = max(h, w)
+        if long_edge > max_long_edge:
+            scale = max_long_edge / long_edge
+            new_h = max(1, int(round(h * scale)))
+            new_w = max(1, int(round(w * scale)))
+            pil_img = Image.fromarray(img)
+            pil_img = pil_img.resize((new_w, new_h), Image.BILINEAR)
+            img = np.array(pil_img)
 
     return img
 
@@ -297,8 +327,8 @@ def CLAHE(image, clip_limit=0.1, nbins=128, strong=False):
     Returns:
         np.ndarray: Contrast-enhanced grayscale image, with median filtering applied
     """
-    # Convert to grayscale if needed
-    gray_image = np.mean(image, axis=-1) if image.ndim == 3 else image
+    # Convert to grayscale if needed — use float32 mean for speed
+    gray_image = np.mean(image, axis=-1, dtype=np.float32) if image.ndim == 3 else image
 
     if strong:
         image = skimage.exposure.equalize_adapthist(gray_image, clip_limit=0.6, nbins=48)
@@ -307,8 +337,8 @@ def CLAHE(image, clip_limit=0.1, nbins=128, strong=False):
             gray_image, clip_limit=clip_limit, nbins=nbins
         )
 
-    # Apply median filter to reduce noise
-    image = skimage.filters.median(image, skimage.morphology.disk(2))
+    # Apply median filter to reduce noise (reuse pre-computed disk)
+    image = skimage.filters.median(image, _MEDIAN_DISK)
 
     return image
 
@@ -334,6 +364,16 @@ def process_image(file, from_stream=False, background_padding=0, bg_session=None
     if from_stream:
         file = file.stream
         image_raw = np.array(Image.open(file, mode="r").convert("RGB"))
+        # Downscale large stream images to speed up background removal
+        h, w = image_raw.shape[:2]
+        long_edge = max(h, w)
+        if long_edge > _REMBG_MAX_LONG_EDGE:
+            scale = _REMBG_MAX_LONG_EDGE / long_edge
+            new_h = max(1, int(round(h * scale)))
+            new_w = max(1, int(round(w * scale)))
+            pil_img = Image.fromarray(image_raw)
+            pil_img = pil_img.resize((new_w, new_h), Image.BILINEAR)
+            image_raw = np.array(pil_img)
     else:
         image_raw = robust_load_image(file)
 
