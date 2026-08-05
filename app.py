@@ -198,6 +198,7 @@ def upload_folder():
 
     # Get selected family (default to mosquito for backward compatibility)
     selected_family = request.form.get("family", "mosquito")
+    
     if selected_family not in AVAILABLE_FAMILIES:
         return "Invalid insect family selection.", 400
     

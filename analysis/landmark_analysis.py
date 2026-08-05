@@ -86,10 +86,10 @@ def orientation(coords):
 
     return orientation
 
-def procrustes(dataframe, semilandmark=False, N_semi=CONFIG["N_semilandmarks"], slm_p_connection=CONFIG["semilandmarks_per_connection"]):
+def procrustes(dataframe, semilandmark=False, N_semi=CONFIG["N_semilandmarks"], slm_p_connection=CONFIG["semilandmarks_per_connection"], family="mosquitoes"):
     
     prediction_df = dataframe
-    prediction_df_arr = prediction_df[[col for col in prediction_df.columns if "X" in col or "Y" in col]]
+    prediction_df_arr = prediction_df[[col for col in prediction_df.columns if "X_" in col or "Y_" in col]]
 
     # Extract the numbers from the column names and sort accordingly to fit geomorph
     def sort_key(col):
@@ -112,13 +112,16 @@ def procrustes(dataframe, semilandmark=False, N_semi=CONFIG["N_semilandmarks"], 
             prediction_df_arr, 
             N_semi=N_semi, 
             slm_p_connection=slm_p_connection, 
-            filenames=filenames
+            filenames=filenames,
+            family=family
         )
     else:
         prediction_proc_df = geomorph.procrustes_analysis(
             prediction_df_arr, 
-            filenames=filenames
+            filenames=filenames,
+            family=family
         )
+        
 
     # Transfer the outlier detection
     prediction_df["Avg_Procrustes_Distance"] = prediction_proc_df["Avg_Procrustes_Dist"]
@@ -128,7 +131,7 @@ def procrustes(dataframe, semilandmark=False, N_semi=CONFIG["N_semilandmarks"], 
 
     return prediction_df, prediction_proc_df
 
-def procrustes_with_reference(dataframe, semilandmark=False):
+def procrustes_with_reference(dataframe, semilandmark=False, family="mosquito"):
     # Load and process reference data
     if semilandmark: 
         reference_df = pd.read_csv(os.path.join(CONFIG["root_path"], CONFIG["semilandmark_reference_path"]))
@@ -160,9 +163,9 @@ def procrustes_with_reference(dataframe, semilandmark=False):
 
     # Do Procrustes Analysis
     if semilandmark:
-        proc_df = geomorph.procrustes_semilandmark_analysis(concat_df_arr, filenames=filenames)
+        proc_df = geomorph.procrustes_semilandmark_analysis(concat_df_arr, filenames=filenames, family=family)
     else:
-        proc_df = geomorph.procrustes_analysis(concat_df_arr, filenames=filenames)
+        proc_df = geomorph.procrustes_analysis(concat_df_arr, filenames=filenames, family=family)
 
     # Split proc_df into reference and prediction based on the original dataframe sizes
     n_reference = reference_df_arr.shape[0]
@@ -193,6 +196,8 @@ def LDA(reference_df, reference_proc_df, prediction_df, prediction_proc_df, targ
     # Parse predictions for json
     Y_predict_label = lda.predict(X_predict)
     Y_predict_score = np.max(Y_predict_scores, axis=1)
+
+    print(Y_predict_label)
 
     predictions_lda_map = {}
     for i, file in enumerate(prediction_df["File"].values):

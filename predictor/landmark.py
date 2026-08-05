@@ -19,7 +19,7 @@ from torch import nn
 from config_loader import get_config
 
 # Set default device
-device = torch.device("cpu")
+device = torch.device("mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu")
 
 # ---------------------- Custom Layers ---------------------- #
 class CoordConv(nn.Module):

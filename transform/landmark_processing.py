@@ -35,6 +35,7 @@ from transform.image_processing import (
     robust_load_image,
 )
 from transform.wing_processing import find_skeleton_path
+from transform import landmark_processing
 
 # ---------------------- SEGMENT TO LANDMARKS ---------------------- #
 
@@ -341,7 +342,7 @@ def create_landmark_heatmap(file_path, X, Y, radius=3, flipped=False, background
     combined = np.concatenate([image_raw, heatmap[..., np.newaxis]], axis=-1)
     combined = (combined).astype(np.uint8)
 
-    combined_processed = process_image_with_landmarks(combined, background_padding=background_padding)
+    combined_processed, mask, mask_aligned = process_image_with_landmarks(combined, background_padding=background_padding)
     image_processed, heatmap_processed = combined_processed[:,:,:3], combined_processed[:,:,3]
 
     landmark_ls = []
@@ -353,9 +354,16 @@ def create_landmark_heatmap(file_path, X, Y, radius=3, flipped=False, background
     landmark_arr = np.asarray(landmark_ls)
     landmark_heatmap = create_heatmap_from_coords(landmark_arr, N_landmarks=len(X))
 
+    x = [x[0] for x in landmark_arr]
+    y = [y[1] for y in landmark_arr]
+    scalable_landmark_arr = np.asarray([x, y])
+    scaled_annotation_coord = landmark_processing.rescale_coordinates(scalable_landmark_arr, mask, mask_aligned)
+
     save_path_coords = os.path.join("training", EXPERIMENT, "landmark", "landmark_heatmaps", file_path.split(os.sep)[-1].split(".")[0] + "_coords.npy")
     save_path_heatmap = os.path.join("training", EXPERIMENT, "landmark", "landmark_heatmaps", file_path.split(os.sep)[-1].split(".")[0] + "_map.npy")
+    save_path_annotation = os.path.join("training", EXPERIMENT, "landmark", "landmark_heatmaps", file_path.split(os.sep)[-1].split(".")[0] + "_scaled-annotation.npy")
 
     np.save(save_path_coords, landmark_arr)
     np.save(save_path_heatmap, landmark_heatmap)
+    np.save(save_path_annotation, scaled_annotation_coord)
     return landmark_arr, landmark_heatmap

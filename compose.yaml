@@ -10,6 +10,15 @@ services:
       - ./static/requests:/app/static/requests
     environment:
       - FLASK_SECRET_KEY=${FLASK_SECRET_KEY:-CHANGEME-INSECURE-DEFAULT}
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/"]

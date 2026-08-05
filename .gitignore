@@ -13,3 +13,9 @@ analysis/temp/output.csv
 *.json
 /ithildin_env
 *.tps
+/training/data_psycho
+/training/models_psycho
+/training/data_uba
+/wireframes
+*.ipynb
+/training/data_othergenus

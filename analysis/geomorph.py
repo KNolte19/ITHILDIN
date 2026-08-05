@@ -17,6 +17,7 @@ import numpy as np
 import pandas as pd
 
 from config import CONFIG
+from config_loader import get_config
 
 def save_tps(dataframe, output_path, filenames=None):
     """
@@ -52,11 +53,21 @@ def save_tps(dataframe, output_path, filenames=None):
 
             
 
-def save_sliders(sliders_path, N_semi=CONFIG["semilandmarks_per_connection"], slm_p_connection=CONFIG["semilandmarks_per_connection"]):
+def save_sliders(sliders_path, N_semi=None, slm_p_connection=None, family="mosquito"):
     """
     Generates the 3-column matrix for geomorph from a list of curve paths.
     Each path is a list of R-indices (1-based).
+
     """
+
+    CONFIG = get_config(family)
+
+    if N_semi is None:
+        N_semi = CONFIG["semilandmarks_per_connection"]
+    if slm_p_connection is None:
+        slm_p_connection = CONFIG["semilandmarks_per_connection"]
+
+
     # We build a list of lists, where each inner list is a full path of R-indices (1-based)
     curve_definitions = []
     current_semi_idx = CONFIG["N_landmarks"] + 1 # Semilandmarks start at R-index 18
@@ -84,7 +95,7 @@ def save_sliders(sliders_path, N_semi=CONFIG["semilandmarks_per_connection"], sl
     pd.DataFrame(sliders).to_csv(sliders_path, index=False, header=False)
 
 
-def run_r_analysis(dataframe, semilandmark, script_name, N_semi=CONFIG["N_semilandmarks"], slm_p_connection=CONFIG["semilandmarks_per_connection"], filenames=None):
+def run_r_analysis(dataframe, semilandmark, script_name, N_semi=CONFIG["N_semilandmarks"], slm_p_connection=CONFIG["semilandmarks_per_connection"], filenames=None, family="mosquito"):
     
     input_path_csv = os.path.join(CONFIG["root_path"], "analysis", "temp", "input.csv")
     input_path_tps = os.path.join(CONFIG["root_path"], "analysis", "temp", "input.tps")
@@ -95,7 +106,7 @@ def run_r_analysis(dataframe, semilandmark, script_name, N_semi=CONFIG["N_semila
     # Prepare input files for R script
     if semilandmark:
         save_tps(dataframe, input_path_tps, filenames=filenames)
-        save_sliders(sliders_path,  N_semi=N_semi, slm_p_connection=slm_p_connection)
+        save_sliders(sliders_path,  N_semi=N_semi, slm_p_connection=slm_p_connection, family=family)
         dataframe.to_csv(input_path_csv, index=False, sep=",")
 
     else:
@@ -122,14 +133,14 @@ def run_r_analysis(dataframe, semilandmark, script_name, N_semi=CONFIG["N_semila
     return pd.read_csv(output_path, sep=",")
 
 # Wrapper functions
-def procrustes_analysis(dataframe, filenames=None):
-    return run_r_analysis(dataframe, False, "procrustes.R", filenames=filenames)
+def procrustes_analysis(dataframe, filenames=None, family="mosquito"):
+    return run_r_analysis(dataframe, False, "procrustes.R", filenames=filenames, family=family)
 
-def procrustes_semilandmark_analysis(dataframe, N_semi=CONFIG["N_semilandmarks"], slm_p_connection=CONFIG["semilandmarks_per_connection"], filenames=None):
-    return run_r_analysis(dataframe, True, "procrustes_semilandmarks.R", N_semi=N_semi, slm_p_connection=slm_p_connection, filenames=filenames)
+def procrustes_semilandmark_analysis(dataframe, N_semi=CONFIG["N_semilandmarks"], slm_p_connection=CONFIG["semilandmarks_per_connection"], filenames=None, family="mosquito"):
+    return run_r_analysis(dataframe, True, "procrustes_semilandmarks.R", N_semi=N_semi, slm_p_connection=slm_p_connection, filenames=filenames, family=family)
 
-def anova_analysis(dataframe, filenames=None):
-    return run_r_analysis(dataframe, False, "anova.R", filenames=filenames)
+def anova_analysis(dataframe, filenames=None, family="mosquito"):
+    return run_r_analysis(dataframe, False, "anova.R", filenames=filenames, family=family)
 
-def anova_semilandmark_analysis(dataframe, N_semi=CONFIG["N_semilandmarks"], slm_p_connection=CONFIG["semilandmarks_per_connection"], filenames=None):
-    return run_r_analysis(dataframe, True, "anova.R", N_semi=N_semi, slm_p_connection=slm_p_connection, filenames=filenames)
+def anova_semilandmark_analysis(dataframe, N_semi=CONFIG["N_semilandmarks"], slm_p_connection=CONFIG["semilandmarks_per_connection"], filenames=None, family="mosquito"):
+    return run_r_analysis(dataframe, True, "anova.R", N_semi=N_semi, slm_p_connection=slm_p_connection, filenames=filenames, family=family)

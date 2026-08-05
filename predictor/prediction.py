@@ -64,7 +64,7 @@ def run_segmentation(
     segment_model, _, _, device = get_models(family)
     tensor_image = TF.to_tensor(image.astype(np.float32)).unsqueeze(0).to(device)
 
-    with torch.no_grad():
+    with torch.inference_mode():
         segment_model.eval()
         prediction = segment_model(tensor_image)
 
@@ -96,7 +96,7 @@ def run_landmark_detection(
         TF.to_tensor(segmentation_mask.astype(np.float32)).unsqueeze(0).to(device)
     )
 
-    with torch.no_grad():
+    with torch.inference_mode():
         landmark_model.eval()
         prediction = landmark_model(tensor_image, tensor_segment)
 
@@ -125,7 +125,7 @@ def run_classification(image: np.ndarray, family="mosquito", calibration=False) 
     _, _, classification_model, device = get_models(family)
     tensor_image = TF.to_tensor(image.astype(np.float32)).unsqueeze(0).to(device)
 
-    with torch.no_grad():
+    with torch.inference_mode():
         classification_model.eval()
         prediction = classification_model(tensor_image)
         prediction_prob = prediction.cpu().detach().numpy() #TODO: Replace Sigmoid with Calibrated Probabilities

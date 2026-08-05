@@ -11,6 +11,15 @@ Available Families:
 """
 
 import os
+import torch
+
+def _detect_device():
+    if torch.cuda.is_available():
+        return "cuda"
+    if torch.backends.mps.is_available():
+        return "mps"
+    return "cpu"
+
 
 # Determine root path: use environment variable if set, otherwise use current directory
 _DEFAULT_ROOT = os.path.dirname(os.path.abspath(__file__))
@@ -21,7 +30,7 @@ MOSQUITO_CONFIG = {
     "family": "mosquito", # Family name
     "has_classification": True, # Whether the family has a trained classification model (True for mosquito, False for drosophila and tsetse)
     "root_path": _ROOT_PATH, # Root path for the project, can be set via ITHILDIN_ROOT environment variable
-    "device": "cpu", # Device to run inference on (e.g., "cpu" or "cuda")
+    "device": _detect_device(), # Device to run inference on (e.g., "cpu" or "cuda")
     "segmentation_image_size": (640, 320), # Input size for segmentation model
     "landmark_image_size": (480, 240), # Input size for landmark model
     "classifier_image_size": (480, 240), # Input size for classification model
@@ -94,7 +103,7 @@ DROSOPHILA_CONFIG = {
     "family": "drosophila",
     "has_classification": False,
     "root_path": _ROOT_PATH,
-    "device": "cpu",
+    "device": _detect_device(),
     "segmentation_image_size": (640, 320),
     "landmark_image_size": (480, 240),
     "classifier_image_size": (480, 240),
@@ -134,7 +143,7 @@ TSETSE_CONFIG = {
     "family": "tsetse",
     "has_classification": False,
     "root_path": _ROOT_PATH,
-    "device": "cpu",
+    "device": _detect_device(),
     "segmentation_image_size": (640, 320),
     "landmark_image_size": (480, 240),
     "classifier_image_size": (480, 240),
@@ -166,11 +175,62 @@ TSETSE_CONFIG = {
     "semilandmark_reference_path": "analysis/LDA_reference_dataframe_semilandmarks.csv",
 }
 
+# ========== Psychodidae Configuration ==========
+PSYCHODIDAE_CONFIG = { 
+    "family": "psychodidae",
+    "has_classification": True,
+    "root_path": _ROOT_PATH,
+    "device": _detect_device(),
+    "segmentation_image_size": (640, 320),
+    "landmark_image_size": (480, 240),
+    "classifier_image_size": (480, 240),
+    "model_paths": {
+        "segmentation": "training/models_psycho/psycho_segmentation_weights_fold-0.pth",
+        "landmark": "training/models_psycho/landmark_weights_fold-0_data_psycho.pth", 
+        "classification": "training/models_mosquito/mosquito_classifier_1_evaluation.pth" # Placeholder, not used 
+    },
+    "N_landmarks": 12, 
+    "N_semilandmarks": 59, 
+    "index_most_left_landmark": 0, 
+    "index_most_right_landmark": 4, 
+    "index_most_upper_landmark": 0, 
+    "index_most_lower_landmark": 7, 
+    "allowed_connections": [
+        (0,2), (0,11),
+        (1,2),
+        (2,3),
+        (3,4), (3,0),
+        (4,5), (4, 11),
+        (5,6), 
+        (6,7), (6,10),
+        (7,8), (7,10),
+        (8,9),
+    ],
+    "not_allowed_connections": [(0,1), (0,5), (0,10), (1, 11), (4,10), (6,11), (10, 11)], 
+    "semilandmarks_per_connection": [
+        5, 3,
+        3,
+        3,
+        3, 5,
+        1, 8,
+        3,
+        3, 8,
+        3, 8,
+        3,
+    ],
+    "classifier_species_list": 
+        ['Phlebotomus mascittii', 'Phlebotomus papatasi', 'Sergentomyia africana', 'Sergentomyia distincta', 'Sergentomyia ingrami', 'Sergentomyia schwetzi'], 
+
+    "landmark_reference_path": "analysis/LDA_reference_dataframe_landmarks_sandfly.csv", 
+    "semilandmark_reference_path": "analysis/LDA_reference_dataframe_semilandmarks_sandfly.csv", 
+}
+
 # Available insect families
 AVAILABLE_FAMILIES = {
     "mosquito": MOSQUITO_CONFIG,
     "drosophila": DROSOPHILA_CONFIG,
     "tsetse": TSETSE_CONFIG,
+    #"psychodidae": PSYCHODIDAE_CONFIG,
 }
 
 # Default configuration

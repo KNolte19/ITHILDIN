@@ -75,7 +75,7 @@ def run_prediction(file, save_path="test", family="mosquito", timing_info=None, 
     # Step 1: Image preprocessing
     step_start = time.time()
     image_aligned, mask_aligned, mask = image_processing.process_image(
-        file, from_stream=stream, bg_session=bg_session
+        file, from_stream=stream, bg_session=bg_session, background_padding=20,
     )
 
     image_ithildin = image_processing.transform_image(
@@ -107,7 +107,7 @@ def run_prediction(file, save_path="test", family="mosquito", timing_info=None, 
     # Step 4: Species classification (only for families that support it)
     predicted_species = None
     predicted_species_proba = None
-    if CONFIG["has_classification"]:
+    if CONFIG["has_classification"] and family in ["mosquito"]: #TODO: Add this to config for other families when available
         step_start = time.time()
         image_classifier = image_processing.transform_image(
             image_aligned,
@@ -195,9 +195,9 @@ def run_prediction(file, save_path="test", family="mosquito", timing_info=None, 
         "scaled_centroid": float(centroid_size),
         "orientation": orientation,
         "cnn_prediction": {
-            "top": str(predicted_species) if CONFIG["has_classification"] else None,
-            "score": float(predicted_species_proba) if CONFIG["has_classification"] else None,
-            "map": predictions_cnn_map if CONFIG["has_classification"] else None,
+            "top": str(predicted_species) if CONFIG["has_classification"] and family in ["mosquito"] else None, #TODO: Add this to config for other families when available
+            "score": float(predicted_species_proba) if CONFIG["has_classification"] and family in ["mosquito"] else None, #TODO: Add this to config for other families when available
+            "map": predictions_cnn_map if CONFIG["has_classification"] and family in ["mosquito"] else None, #TODO: Add this to config for other families when available
         },
     }
 
@@ -260,8 +260,8 @@ def get_landmark_predictions(dataframe, session, has_classifier=False):
 
     # Run Procrustes analysis and detect outliers
     if has_classifier:
-        reference_df, reference_proc_df, prediction_df, prediction_proc_df = landmark_analysis.procrustes_with_reference(dataframe_landmarks, semilandmark=False)
-        reference_df_semi, reference_proc_df_semi, prediction_df_semi, prediction_proc_df_semi = landmark_analysis.procrustes_with_reference(dataframe_semilandmarks, semilandmark=True)
+        reference_df, reference_proc_df, prediction_df, prediction_proc_df = landmark_analysis.procrustes_with_reference(dataframe_landmarks, semilandmark=False, family=CONFIG["family"])
+        reference_df_semi, reference_proc_df_semi, prediction_df_semi, prediction_proc_df_semi = landmark_analysis.procrustes_with_reference(dataframe_semilandmarks, semilandmark=True, family=CONFIG["family"])
         
         dataframe_landmarks = landmark_analysis.detect_outlier(dataframe_landmarks, prediction_proc_df)
 
@@ -300,7 +300,7 @@ def get_landmark_predictions(dataframe, session, has_classifier=False):
                 try:
                     file_lda_map = predictions_lda_map_semilandmarks[file]
                     semilandmark_used = True
-                except KeyError:
+                except Exception as e:
                     file_lda_map = predictions_lda_map_landmarks[file]
                     semilandmark_used = False
             else:
@@ -327,19 +327,27 @@ def get_landmark_predictions(dataframe, session, has_classifier=False):
             lda_map = data["landmark_prediction"]["map"]
 
             average_map = {}
-            for species in CONFIG["classifier_species_list"]:
-                cnn_score = cnn_map.get(species, 0)
-                lda_score = lda_map.get(species, 0)
-                average_map[species] = (cnn_score - 0.05 + lda_score) / 2 # Subtract 0.05 from CNN score to give slightly more weight to LDA prediction
+            for species in CONFIG["classifier_species_list"]: 
+                try:
+                    cnn_score = cnn_map.get(species, 0)
+                    lda_score = lda_map.get(species, 0)
+                    average_map[species] = (cnn_score - 0.05 + lda_score) / 2 # Subtract 0.05 from CNN score to give slightly more weight to LDA prediction
 
-            average_predicted_species = max(average_map, key=average_map.get)
-            average_predicted_score = average_map[average_predicted_species] 
+                    average_predicted_species = max(average_map, key=average_map.get)
+                    average_predicted_score = average_map[average_predicted_species] 
 
-            data["ensemble_prediction"] = {
-                "top": str(average_predicted_species),
-                "score": float(average_predicted_score),
-                "map": average_map
-            }   
+                    data["ensemble_prediction"] = {
+                        "top": str(average_predicted_species),
+                        "score": float(average_predicted_score),
+                        "map": average_map
+                    }   
+                except Exception as e:
+                    # Use LDA prediction if CNN prediction fails
+                    data["ensemble_prediction"] = {
+                        "top": str(predicted_species),
+                        "score": float(predicted_species_proba),
+                        "map": predictions_lda_map
+                    }
 
             with open(json_path, "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=2)
@@ -348,6 +356,7 @@ def get_landmark_predictions(dataframe, session, has_classifier=False):
 
 
 def prepare_download(prediction_df, prediction_lm_df, prediction_slm_df, has_classifier, session):
+    print(session["family"])
     CONFIG = get_config(session["family"])
 
     base_columns = [

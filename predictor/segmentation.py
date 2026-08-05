@@ -13,7 +13,7 @@ import torch.nn as nn
 from config_loader import get_config
 
 # Set default device
-device = torch.device("cpu")
+device = torch.device("mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu")
 
 class AddCoords(nn.Module):
     """

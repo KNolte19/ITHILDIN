@@ -24,6 +24,9 @@ import numpy as np
 import pandas as pd
 import skimage as ski
 from tqdm import tqdm
+from rembg import new_session
+
+session = new_session()
 
 try:
     # Try importing config from the script's directory or parent
@@ -112,7 +115,8 @@ def process_images(experiment_name, root_path, image_size, annotations_df, backg
             # Apply image processing pipeline with padding
             image_aligned, mask_aligned, mask = image_processing.process_image(
                 image_paths[i], 
-                background_padding=background_padding
+                background_padding=background_padding,
+                bg_session = session
             )
             image = image_processing.transform_image(
                 image_aligned, 

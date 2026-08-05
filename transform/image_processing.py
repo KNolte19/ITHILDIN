@@ -139,7 +139,7 @@ def pad_to_square(image):
     return image_padded
 
 
-def remove_background(image, return_mask=True, bg_session=None):
+def remove_background(image, return_mask=True, bg_session=None, find_largest=True):
     """
     Remove background using AI-based segmentation (rembg).
 
@@ -166,7 +166,10 @@ def remove_background(image, return_mask=True, bg_session=None):
     labeled_mask = skimage.measure.label(initial_mask)
     regions = skimage.measure.regionprops(labeled_mask)
 
-    if not regions:
+    if find_largest == False:
+        mask = initial_mask
+    elif not regions:
+        print("No foreground detected; returning empty mask.")
         mask = np.zeros_like(alpha_channel, dtype=bool)
     else:
         # Find the largest region (assumed to be the wing)
@@ -421,4 +424,4 @@ def process_image_with_landmarks(image_raw, background_padding=0):
     image = pad_to_square(image)
     image = crop_to_ratio(image)
 
-    return image
+    return image, mask, mask_aligned
