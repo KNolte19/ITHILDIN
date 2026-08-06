@@ -30,14 +30,7 @@ from config import CONFIG
 # Pre-computed disk structuring element for median filtering (avoids recomputing on every call)
 _MEDIAN_DISK = skimage.morphology.disk(2)
 
-# Maximum pixel dimension for the long edge before background removal.
-# Large TIF files are downscaled to this size prior to rembg processing, which
-# dramatically reduces memory use and rembg runtime. The final landmark/segmentation
-# images are always resized to the model-specific sizes afterwards, so the
-# transformation result is identical.
-_REMBG_MAX_LONG_EDGE = 1024
-
-def robust_load_image(file_path, force_resave_tiff=True, max_long_edge=_REMBG_MAX_LONG_EDGE):
+def robust_load_image(file_path, force_resave_tiff=True):
     """
     Loads an image with robust TIFF support.
 
@@ -46,17 +39,12 @@ def robust_load_image(file_path, force_resave_tiff=True, max_long_edge=_REMBG_MA
 
     Ensures the returned array is HxWx3 (repeats grayscale channel or strips alpha).
 
-    If the image's longest edge exceeds *max_long_edge*, the image is downscaled
-    proportionally using bilinear interpolation before being returned.  This
-    reduces memory use and speeds up the background-removal step without
-    changing the downstream processing result (models always resize to their
-    own target sizes later in the pipeline).
 
     Args:
         file_path (str): Path to the image file.
         force_resave_tiff (bool): Whether to overwrite and resave non-TIFFs as TIFF.
         max_long_edge (int): Downscale so the longest side does not exceed this
-            value.  Set to 0 or None to disable downscaling.  Default 1024.
+            value.  Set to 0 or None to disable downscaling.  Default 1280.
 
     Returns:
         np.ndarray: The loaded image as a NumPy array with 3 channels.
@@ -69,7 +57,7 @@ def robust_load_image(file_path, force_resave_tiff=True, max_long_edge=_REMBG_MA
     except (tifffile.TiffFileError, KeyError):
         real_format = imghdr.what(file_path)
 
-        if real_format in {"png", "jpeg", "bmp", "gif"}:
+        if real_format in {"png", "jpeg", "bmp", "gif", "jpg", "tiff", "webp"}:
             try:
                 with Image.open(file_path) as pil:
                     pil = pil.convert("RGB")
@@ -89,18 +77,6 @@ def robust_load_image(file_path, force_resave_tiff=True, max_long_edge=_REMBG_MA
         img = np.stack([img, img, img], axis=-1)
     elif img.ndim == 3 and img.shape[2] == 4:
         img = img[:, :, :3]
-
-    # Downscale large images to speed up background removal
-    if max_long_edge:
-        h, w = img.shape[:2]
-        long_edge = max(h, w)
-        if long_edge > max_long_edge:
-            scale = max_long_edge / long_edge
-            new_h = max(1, int(round(h * scale)))
-            new_w = max(1, int(round(w * scale)))
-            pil_img = Image.fromarray(img)
-            pil_img = pil_img.resize((new_w, new_h), Image.BILINEAR)
-            img = np.array(pil_img)
 
     return img
 
