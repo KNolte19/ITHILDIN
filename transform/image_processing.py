@@ -314,7 +314,7 @@ def CLAHE(image, clip_limit=0.1, nbins=128, strong=False):
         )
 
     # Apply median filter to reduce noise (reuse pre-computed disk)
-    image = skimage.filters.median(image, _MEDIAN_DISK)
+    #image = skimage.filters.median(image, _MEDIAN_DISK)
 
     return image
 
@@ -340,16 +340,6 @@ def process_image(file, from_stream=False, background_padding=0, bg_session=None
     if from_stream:
         file = file.stream
         image_raw = np.array(Image.open(file, mode="r").convert("RGB"))
-        # Downscale large stream images to speed up background removal
-        h, w = image_raw.shape[:2]
-        long_edge = max(h, w)
-        if long_edge > _REMBG_MAX_LONG_EDGE:
-            scale = _REMBG_MAX_LONG_EDGE / long_edge
-            new_h = max(1, int(round(h * scale)))
-            new_w = max(1, int(round(w * scale)))
-            pil_img = Image.fromarray(image_raw)
-            pil_img = pil_img.resize((new_w, new_h), Image.BILINEAR)
-            image_raw = np.array(pil_img)
     else:
         image_raw = robust_load_image(file)
 
