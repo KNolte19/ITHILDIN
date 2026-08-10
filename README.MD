@@ -44,6 +44,12 @@ docker compose up -d
 # Access at http://127.0.0.1:8080
 ```
 
+If you are running on a remote linux server with GPU support, you can use the following command to start the container with GPU access:
+
+```bash
+docker compose -f compose.server.yaml up -d --build
+```
+
 See [DOCKER.md](DOCKER.md) for complete Docker deployment guide including production configuration, troubleshooting, and security considerations.
 
 ### Manual Setup (Recommended for development and training)
