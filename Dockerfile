@@ -40,11 +40,14 @@ RUN /opt/R/4.4.2/bin/Rscript -e "\
     install.packages(c('geomorph','shapes','RRPP','rgl','ape','ggplot2','jpeg'), \
     lib=lib, repos='https://cloud.r-project.org/')"
 
-# Copy requirements file
-COPY requirements.txt .
+# Build argument to select the requirements file (default: local/CPU build)
+ARG REQUIREMENTS_FILE=requirements.local.txt
+
+# Copy requirements files
+COPY requirements.local.txt requirements.server.txt ./
 
 # Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r ${REQUIREMENTS_FILE}
 
 # Copy application code
 COPY . .

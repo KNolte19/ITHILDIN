@@ -1,0 +1,15 @@
+services:
+  ithildin-app:
+    build:
+      args:
+        - REQUIREMENTS_FILE=requirements.server.txt
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]

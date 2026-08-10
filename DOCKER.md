@@ -13,13 +13,32 @@ This guide explains how to deploy the ITHILDIN Wing Analysis application using D
 
 ## Quick Start
 
-### 1. Build and Start the Container
+### 1. Choose your setup mode
+
+ITHILDIN supports two deployment modes:
+
+#### Local (CPU-only, no GPU required)
 
 ```bash
 docker compose up -d
 ```
 
-This will:
+This uses `compose.yaml` and installs CPU-only dependencies (`rembg`, `onnxruntime`). Suitable for any machine without an NVIDIA GPU.
+
+#### Server (NVIDIA GPU)
+
+```bash
+docker compose -f compose.yaml -f compose.server.yaml up -d
+```
+
+This merges `compose.server.yaml` on top of `compose.yaml`, enabling the NVIDIA runtime and installing GPU-accelerated dependencies (`rembg[gpu]`, `onnxruntime-gpu`). Requires [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html).
+
+> **Note:** The two modes install different Python packages. Rebuild the image when switching modes:
+> ```bash
+> docker compose [-f compose.yaml -f compose.server.yaml] up -d --build
+> ```
+
+Both modes will:
 - Build the Docker image with all dependencies
 - Start the container in detached mode
 - Map port 127.0.0.1:8080 to container port 8080
@@ -182,21 +201,9 @@ docker compose down --volumes --rmi all
 
 ### GPU Support
 
-To enable GPU acceleration (NVIDIA GPUs):
+GPU acceleration is enabled via the server deployment mode. See [Quick Start — Server](#server-nvidia-gpu) for the command.
 
+Prerequisites:
 1. Install [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html)
-
-2. Modify `compose.yaml`:
-```yaml
-services:
-  ithildin-app:
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
-```
-
-3. Ensure PyTorch CUDA support is available
+2. Ensure your Docker daemon has the NVIDIA runtime configured
+3. Use the server compose command to build and run with GPU support
