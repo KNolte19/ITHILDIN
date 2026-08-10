@@ -46,6 +46,8 @@ analysis/temp/
 training/data/*
 training/data_droso
 training/data_tsetse
+training/data_othergenus
+training/data_uba
 *.png
 *.jpg
 *.jpeg
