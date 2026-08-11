@@ -7,7 +7,7 @@
 
 ITHILDIN is a deep learning-based pipeline for analyzing insect wing images, with a focus on mosquitoes and related Diptera. The system performs automated segmentation, landmark detection, species classification, and geometric morphometric analysis.
 
-Please note that this application is continuously under development and is regularly updated. If you want to use the version of the system described in our preprint, please refer to this repository on Anonymous GitHub: https://anonymous.4open.science/r/ITHILDIN-4313/
+Please note that this application is continuously under development and is regularly updated. If you want to use the version of the system described in our preprint, please refer to this repository on Anonymous GitHub: https://anonymous.4open.science/r/ITHILDIN-6A09/
 
 We welcome feedback and contributions from the community. If you encounter any issues or have suggestions for improvement, please open an issue on GitHub or contact the maintainers directly.
 
