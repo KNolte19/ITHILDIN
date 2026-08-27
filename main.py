@@ -256,10 +256,6 @@ def get_landmark_predictions(dataframe, session, has_classifier=False):
     dataframe_landmarks = dataframe.loc[:, ~dataframe.columns.str.contains(r"_sm_", regex=True)].copy()
 
     # Drop rows where landmark coordinates are missing (happens when image processing fails).
-    # R's gpagen() cannot handle NA values, so rows with any missing landmark coordinate
-    # must be excluded before Procrustes analysis.
-    # Semilandmark columns (X_sm_*, Y_sm_*) are already excluded from dataframe_landmarks above,
-    # so startswith("X_") / startswith("Y_") safely selects only landmark coordinate columns.
     coord_cols_lm = [c for c in dataframe_landmarks.columns if c.startswith("X_") or c.startswith("Y_")]
     dataframe_landmarks = dataframe_landmarks.dropna(subset=coord_cols_lm).reset_index(drop=True)
 
@@ -278,15 +274,13 @@ def get_landmark_predictions(dataframe, session, has_classifier=False):
 
     # If no classifier is available for this family, return dataframe without prediction columns
     if has_classifier:
-                # Run LDA on landmarks only
+        
+        # Run LDA on landmarks only
         prediction_df_landmarks, prediction_proc_df_landmarks, predictions_lda_map_landmarks = landmark_analysis.LDA(
             reference_df, reference_proc_df,
             prediction_df, prediction_proc_df,
             target="TAXA LABEL", semilandmark=False
         )
-
-        # Populate base predictions from landmark-only analysis
-        #dataframe["Outlier"] = dataframe_landmarks["Outlier"]
 
         # Enhance predictions with semilandmarks where available
         if len(dataframe_semilandmarks) > 0:
@@ -296,9 +290,6 @@ def get_landmark_predictions(dataframe, session, has_classifier=False):
                 prediction_df_semi, prediction_proc_df_semi,
                 target="TAXA LABEL", semilandmark=True
             )
-
-            # Update only rows with complete semilandmark data
-            #dataframe.loc[dataframe_semilandmarks.index, "Outlier"] = dataframe_semilandmarks["Outlier"]
 
         # Write results to dataframe
         for file in prediction_df_landmarks["File_Name"]:
@@ -339,7 +330,7 @@ def get_landmark_predictions(dataframe, session, has_classifier=False):
                 try:
                     cnn_score = cnn_map.get(species, 0)
                     lda_score = lda_map.get(species, 0)
-                    average_map[species] = (cnn_score - 0.05 + lda_score) / 2 # Subtract 0.05 from CNN score to give slightly more weight to LDA prediction
+                    average_map[species] = (cnn_score * 0.45 + lda_score * 0.55)  # Weighted average of CNN and LDA scores
 
                     average_predicted_species = max(average_map, key=average_map.get)
                     average_predicted_score = average_map[average_predicted_species] 

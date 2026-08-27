@@ -62,14 +62,14 @@
 
             {% if has_classifier %}
             <td class="{% if prediction.ENS_Predicted_Score > 0.8 %}high-confidence{% elif prediction.ENS_Predicted_Score > 0.5 %}medium-confidence{% else %}low-confidence{% endif %}">
-              {{ prediction.ENS_Predicted_Taxa }}
+              {% if prediction.ENS_Predicted_Score < 0.5 %}LOW CONFIDENCE{% else %}{{ prediction.ENS_Predicted_Taxa }}{% endif %}
             </td>
             <td class="{% if prediction.ENS_Predicted_Score > 0.8 %}high-confidence{% elif prediction.ENS_Predicted_Score > 0.5 %}medium-confidence{% else %}low-confidence{% endif %}">
               {{ prediction.ENS_Predicted_Score }}  
             </td>
             <td>{{ prediction.Centroid }}</td>
             {% endif %}
-            <td>{{ prediction.Status }}</td>
+            <td class="{% if prediction.Status == 'Full Skeleton' %}high-confidence{% elif prediction.Status == 'Repaired' %}medium-confidence{% elif prediction.Status == 'Failed Repair' %}low-confidence{% endif %}">{{ prediction.Status }}</td>
             
           </tr>
         {% endfor %}
