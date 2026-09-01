@@ -94,8 +94,8 @@ MOSQUITO_CONFIG = {
         'Haemagogus_leucocelaenus', 'Limatus_durhamii',
         'Sabethes_albiprivus', 'Wyeomyia_arthrostigma', 'other'
     ],
-    "landmark_reference_path": "analysis/LDA_reference_dataframe_landmarks.csv", # Path to reference dataframe for landmarks (used in LDA analysis)
-    "semilandmark_reference_path": "analysis/LDA_reference_dataframe_semilandmarks.csv", # Path to reference dataframe for semilandmarks (used in LDA analysis)
+    "landmark_reference_path": "analysis/LDA_reference_dataframe_landmarks_mosquito.csv", # Path to reference dataframe for landmarks (used in LDA analysis)
+    "semilandmark_reference_path": "analysis/LDA_reference_dataframe_semilandmarks_mosquito.csv", # Path to reference dataframe for semilandmarks (used in LDA analysis)
 }
 
 # ========== Drosophila Configuration ==========

@@ -314,7 +314,7 @@ def CLAHE(image, clip_limit=0.1, nbins=128, strong=False):
         )
 
     # Apply median filter to reduce noise (reuse pre-computed disk)
-    #image = skimage.filters.median(image, _MEDIAN_DISK)
+    image = skimage.filters.median(image, _MEDIAN_DISK)
 
     return image
 
