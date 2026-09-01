@@ -11,6 +11,8 @@ RUN mkdir -p /app/analysis/temp && chown -R 1000:1000 /app/analysis/temp
 RUN apt-get update && apt-get install -y \
     gnupg2 \
     curl \
+    cmake \
+    libpng-dev \
     libcurl4-openssl-dev \
     libssl-dev \
     libxml2-dev \
@@ -34,11 +36,15 @@ RUN apt-get update \
 # Add Posit R to PATH
 ENV PATH="/opt/R/4.4.2/bin:${PATH}"
 
-# Install R packages explicitly into R 4.4.2 library
+# Install R packages explicitly into R 4.4.2 library.
+# install.packages never exits non-zero, so verify every package loads and
+# fail the build otherwise.
 RUN /opt/R/4.4.2/bin/Rscript -e "\
     lib <- '/opt/R/4.4.2/lib/R/library'; \
-    install.packages(c('geomorph','shapes','RRPP','rgl','ape','ggplot2','jpeg'), \
-    lib=lib, repos='https://cloud.r-project.org/')"
+    pkgs <- c('geomorph','shapes','RRPP','rgl','ape','ggplot2','jpeg'); \
+    install.packages(pkgs, lib=lib, repos='https://cloud.r-project.org/'); \
+    missing <- pkgs[!sapply(pkgs, requireNamespace, quietly=TRUE)]; \
+    if (length(missing)) stop('R packages failed to install: ', paste(missing, collapse=', '))"
 
 # Build argument to select the requirements file (default: local/CPU build)
 ARG REQUIREMENTS_FILE=requirements.local.txt
