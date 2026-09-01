@@ -18,6 +18,7 @@ Integrates with R's geomorph package for advanced morphometric analyses.
 """
 
 import os
+import pickle
 import warnings
 
 import numpy as np
@@ -29,7 +30,95 @@ from transform import landmark_processing
 from config import CONFIG
 
 # Suppress sklearn warnings for cleaner output
-warnings.simplefilter("ignore") 
+warnings.simplefilter("ignore")
+
+# Per-process cache of loaded reference models: (family, semilandmark) -> dict
+_reference_models = {}
+
+def _coord_sort_key(col):
+    """Sort coordinate columns to X_0, Y_0, X_1, Y_1, ... as geomorph expects."""
+    if "_" in col:
+        prefix, idx = col.split("_")[0], col.split("_")[-1]  # this excludes the "sm" in semilandmarks
+        return (int(idx), 0 if prefix == "X" else 1)
+    return (float('inf'), 0)
+
+def ensure_reference_model(semilandmark=False, family="mosquito"):
+    """
+    Returns the pre-fitted reference model for a family, building it if missing.
+
+    The model consists of a GPA consensus shape (CSV, read by the R scripts for
+    OPA alignment) and a pickled dict with the fitted LDA and outlier thresholds
+    (95th percentile of the reference specimens' Avg/Max Procrustes distances to
+    the consensus). Artifacts live in analysis/models/<family>/ and are rebuilt
+    when missing or older than the reference CSV; delete the directory to force
+    a rebuild (e.g. after a major sklearn upgrade breaks the pickle).
+
+    Returns:
+        dict: {"lda", "avg_max", "max_max", "consensus_path"}
+    """
+    cache_key = (family, semilandmark)
+    if cache_key in _reference_models:
+        return _reference_models[cache_key]
+
+    kind = "semilandmarks" if semilandmark else "landmarks"
+    model_dir = os.path.join(CONFIG["root_path"], "analysis", "models", family)
+    consensus_path = os.path.join(model_dir, f"consensus_{kind}.csv")
+    model_path = os.path.join(model_dir, f"reference_model_{kind}.pkl")
+
+    reference_key = "semilandmark_reference_path" if semilandmark else "landmark_reference_path"
+    reference_path = os.path.join(CONFIG["root_path"], CONFIG[reference_key])
+
+    # Load existing artifacts unless the reference CSV is newer
+    if os.path.exists(consensus_path) and os.path.exists(model_path):
+        if os.path.getmtime(model_path) >= os.path.getmtime(reference_path):
+            with open(model_path, "rb") as f:
+                model = pickle.load(f)
+            model["consensus_path"] = consensus_path
+            _reference_models[cache_key] = model
+            return model
+
+    # Build step 1: GPA over the reference set to obtain the consensus shape
+    # (mshape = mean of the GPA-aligned coordinates)
+    reference_df = pd.read_csv(reference_path)
+    reference_df_arr = reference_df[[col for col in reference_df.columns if "X_" in col or "Y_" in col]]
+    reference_df_arr = reference_df_arr[sorted(reference_df_arr.columns, key=_coord_sort_key)]
+
+    if semilandmark:
+        gpa_df = geomorph.procrustes_semilandmark_analysis(reference_df_arr, family=family)
+    else:
+        gpa_df = geomorph.procrustes_analysis(reference_df_arr, family=family)
+
+    coord_cols = [col for col in gpa_df.columns if ".X" in col or ".Y" in col]
+    consensus = gpa_df[coord_cols].values.mean(axis=0).reshape(-1, 2)
+
+    os.makedirs(model_dir, exist_ok=True)
+    # Write + rename so concurrent workers never read a partial file
+    pd.DataFrame(consensus, columns=["X", "Y"]).to_csv(consensus_path + ".tmp", index=False)
+    os.replace(consensus_path + ".tmp", consensus_path)
+
+    # Build step 2: re-align the raw reference to the consensus by OPA — the
+    # exact transformation applied at inference (notably without semilandmark
+    # sliding) — and fit the LDA and outlier thresholds on those coordinates
+    if semilandmark:
+        proc_df = geomorph.procrustes_semilandmark_analysis(reference_df_arr, family=family, consensus_path=consensus_path)
+    else:
+        proc_df = geomorph.procrustes_analysis(reference_df_arr, family=family, consensus_path=consensus_path)
+
+    lda = LinearDiscriminantAnalysis(solver='lsqr', shrinkage='auto')
+    lda.fit(proc_df[coord_cols].values, np.array(reference_df["TAXA LABEL"]))
+
+    model = {
+        "lda": lda,
+        "avg_max": float(np.percentile(proc_df["Avg_Procrustes_Dist"], 95)),
+        "max_max": float(np.percentile(proc_df["Max_Procrustes_Dist"], 95)),
+    }
+    with open(model_path + ".tmp", "wb") as f:
+        pickle.dump(model, f)
+    os.replace(model_path + ".tmp", model_path)
+
+    model["consensus_path"] = consensus_path
+    _reference_models[cache_key] = model
+    return model
 
 def centroid_size(coords):
     """
@@ -91,14 +180,8 @@ def procrustes(dataframe, semilandmark=False, N_semi=CONFIG["N_semilandmarks"], 
     prediction_df = dataframe
     prediction_df_arr = prediction_df[[col for col in prediction_df.columns if "X_" in col or "Y_" in col]]
 
-    # Extract the numbers from the column names and sort accordingly to fit geomorph
-    def sort_key(col):
-        if "_" in col:
-            prefix, idx = col.split("_")[0], col.split("_")[-1] # this excludes the "sm" in semilandmarks
-            return (int(idx), 0 if prefix == "X" else 1)
-        return (float('inf'), 0)
-
-    prediction_df_arr = prediction_df_arr[sorted(prediction_df_arr.columns, key=sort_key)]
+    # Sort columns to fit geomorph
+    prediction_df_arr = prediction_df_arr[sorted(prediction_df_arr.columns, key=_coord_sort_key)]
     prediction_df = prediction_df[[col for col in prediction_df.columns if "X" not in col and "Y" not in col]]
 
     # Extract filenames if present
@@ -132,62 +215,41 @@ def procrustes(dataframe, semilandmark=False, N_semi=CONFIG["N_semilandmarks"], 
     return prediction_df, prediction_proc_df
 
 def procrustes_with_reference(dataframe, semilandmark=False, family="mosquito"):
-    # Load and process reference data
-    if semilandmark: 
-        reference_df = pd.read_csv(os.path.join(CONFIG["root_path"], CONFIG["semilandmark_reference_path"]))
-    else: 
-        reference_df = pd.read_csv(os.path.join(CONFIG["root_path"], CONFIG["landmark_reference_path"]))
+    """
+    Aligns new specimens to the stored reference consensus shape via ordinary
+    Procrustes superimposition (OPA), building the reference model first if needed.
+    """
+    model = ensure_reference_model(semilandmark=semilandmark, family=family)
 
-    # Split Dataframes into coordinates and non coordiantes
-    reference_df_arr = reference_df[[col for col in reference_df.columns if "X_" in col or "Y_" in col]]
-    reference_df = reference_df[[col for col in reference_df.columns if "X_" not in col and "Y_" not in col]]
-    
+    # Split Dataframe into coordinates and non coordinates
     prediction_df_arr = dataframe[[col for col in dataframe.columns if "X_" in col or "Y_" in col]]
     prediction_df = dataframe[[col for col in dataframe.columns if "X_" not in col and "Y_" not in col]]
 
     # Save filename for tps file
     filenames = dataframe["File"].tolist()
 
-    # Concat new data to reference data
-    concat_df_arr = pd.concat([reference_df_arr, prediction_df_arr])
-    concat_df = pd.concat([reference_df, prediction_df])
-    
-    # Extract the numbers from the column names and sort accordingly to fit geomorph
-    def sort_key(col):
-        if "_" in col:
-            prefix, idx = col.split("_")[0], col.split("_")[-1] # this excludes the "sm" in semilandmarks
-            return (int(idx), 0 if prefix == "X" else 1)
-        return (float('inf'), 0)
+    # Sort columns to fit geomorph
+    prediction_df_arr = prediction_df_arr[sorted(prediction_df_arr.columns, key=_coord_sort_key)]
 
-    concat_df_arr = concat_df_arr[sorted(concat_df_arr.columns, key=sort_key)]
-
-    # Do Procrustes Analysis
+    # Align to the stored consensus (OPA instead of a full GPA)
     if semilandmark:
-        proc_df = geomorph.procrustes_semilandmark_analysis(concat_df_arr, filenames=filenames, family=family)
+        prediction_proc_df = geomorph.procrustes_semilandmark_analysis(
+            prediction_df_arr, filenames=filenames, family=family, consensus_path=model["consensus_path"])
     else:
-        proc_df = geomorph.procrustes_analysis(concat_df_arr, filenames=filenames, family=family)
+        prediction_proc_df = geomorph.procrustes_analysis(
+            prediction_df_arr, filenames=filenames, family=family, consensus_path=model["consensus_path"])
 
-    # Split proc_df into reference and prediction based on the original dataframe sizes
-    n_reference = reference_df_arr.shape[0]
-    reference_proc_df = proc_df.iloc[:n_reference].reset_index(drop=True)
-    prediction_proc_df = proc_df.iloc[n_reference:].reset_index(drop=True)
+    return prediction_df, prediction_proc_df
 
-    return reference_df, reference_proc_df, prediction_df, prediction_proc_df
-
-def LDA(reference_df, reference_proc_df, prediction_df, prediction_proc_df, target="TAXA LABEL", semilandmark = False):
+def LDA(prediction_df, prediction_proc_df, semilandmark=False, family="mosquito"):
 
     # Copy to avoid SettingWithCopyWarning
     prediction_df = prediction_df.copy()
 
-    # Create features and labels
-    X = reference_proc_df[[col for col in reference_proc_df.columns if ".X" in col or ".Y" in col]].values
-    y = np.array(reference_df[target])
-
     X_predict = prediction_proc_df[[col for col in prediction_proc_df.columns if ".X" in col or ".Y" in col]].values
 
-    # Train LDA model on reference data 
-    lda = LinearDiscriminantAnalysis(solver='lsqr', shrinkage='auto')
-    lda.fit(X, y)
+    # Use the pre-trained LDA model of the reference dataset
+    lda = ensure_reference_model(semilandmark=semilandmark, family=family)["lda"]
 
     # Use model to predict new data
     Y_predict_scores = lda.predict_proba(X_predict)

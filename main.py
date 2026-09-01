@@ -264,31 +264,32 @@ def get_landmark_predictions(dataframe, session, has_classifier=False):
 
     # Run Procrustes analysis and detect outliers
     if has_classifier:
-        reference_df, reference_proc_df, prediction_df, prediction_proc_df = landmark_analysis.procrustes_with_reference(dataframe_landmarks, semilandmark=False, family=CONFIG["family"])
-        reference_df_semi, reference_proc_df_semi, prediction_df_semi, prediction_proc_df_semi = landmark_analysis.procrustes_with_reference(dataframe_semilandmarks, semilandmark=True, family=CONFIG["family"])
-        
-        dataframe_landmarks = landmark_analysis.detect_outlier(dataframe_landmarks, prediction_proc_df)
+        # Load (or build once) the pre-fitted reference models: consensus shape, LDA, outlier thresholds
+        model_lm = landmark_analysis.ensure_reference_model(semilandmark=False, family=CONFIG["family"])
+        model_slm = landmark_analysis.ensure_reference_model(semilandmark=True, family=CONFIG["family"])
+
+        prediction_df, prediction_proc_df = landmark_analysis.procrustes_with_reference(dataframe_landmarks, semilandmark=False, family=CONFIG["family"])
+
+        # Outlier thresholds come from the reference distance distribution, not the batch
+        dataframe_landmarks = landmark_analysis.detect_outlier(dataframe_landmarks, prediction_proc_df, max_max=model_lm["max_max"], avg_max=model_lm["avg_max"])
 
         if len(dataframe_semilandmarks) > 0:
-            dataframe_semilandmarks = landmark_analysis.detect_outlier(dataframe_semilandmarks, prediction_proc_df_semi)
+            prediction_df_semi, prediction_proc_df_semi = landmark_analysis.procrustes_with_reference(dataframe_semilandmarks, semilandmark=True, family=CONFIG["family"])
+            dataframe_semilandmarks = landmark_analysis.detect_outlier(dataframe_semilandmarks, prediction_proc_df_semi, max_max=model_slm["max_max"], avg_max=model_slm["avg_max"])
 
     # If no classifier is available for this family, return dataframe without prediction columns
     if has_classifier:
-        
+
         # Run LDA on landmarks only
         prediction_df_landmarks, prediction_proc_df_landmarks, predictions_lda_map_landmarks = landmark_analysis.LDA(
-            reference_df, reference_proc_df,
-            prediction_df, prediction_proc_df,
-            target="TAXA LABEL", semilandmark=False
+            prediction_df, prediction_proc_df, semilandmark=False, family=CONFIG["family"]
         )
 
         # Enhance predictions with semilandmarks where available
         if len(dataframe_semilandmarks) > 0:
 
             prediction_df_semilandmarks, prediction_proc_df_semilandmarks, predictions_lda_map_semilandmarks = landmark_analysis.LDA(
-                reference_df_semi, reference_proc_df_semi,
-                prediction_df_semi, prediction_proc_df_semi,
-                target="TAXA LABEL", semilandmark=True
+                prediction_df_semi, prediction_proc_df_semi, semilandmark=True, family=CONFIG["family"]
             )
 
         # Write results to dataframe

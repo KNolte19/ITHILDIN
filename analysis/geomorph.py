@@ -95,7 +95,7 @@ def save_sliders(sliders_path, N_semi=None, slm_p_connection=None, family="mosqu
     pd.DataFrame(sliders).to_csv(sliders_path, index=False, header=False)
 
 
-def run_r_analysis(dataframe, semilandmark, script_name, N_semi=CONFIG["N_semilandmarks"], slm_p_connection=CONFIG["semilandmarks_per_connection"], filenames=None, family="mosquito"):
+def run_r_analysis(dataframe, semilandmark, script_name, N_semi=CONFIG["N_semilandmarks"], slm_p_connection=CONFIG["semilandmarks_per_connection"], filenames=None, family="mosquito", consensus_path=None):
     
     input_path_csv = os.path.join(CONFIG["root_path"], "analysis", "temp", "input.csv")
     input_path_tps = os.path.join(CONFIG["root_path"], "analysis", "temp", "input.tps")
@@ -113,10 +113,10 @@ def run_r_analysis(dataframe, semilandmark, script_name, N_semi=CONFIG["N_semila
         save_tps(dataframe, input_path_tps, filenames=filenames)
         dataframe.to_csv(input_path_csv, index=False, sep=",")
 
-    # Run the R script
+    # Run the R script; a consensus path switches the script from GPA to OPA mode
     try:
         result = subprocess.run(
-            ["Rscript", script_path],
+            ["Rscript", script_path] + ([consensus_path] if consensus_path else []),
             check=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
@@ -133,11 +133,11 @@ def run_r_analysis(dataframe, semilandmark, script_name, N_semi=CONFIG["N_semila
     return pd.read_csv(output_path, sep=",")
 
 # Wrapper functions
-def procrustes_analysis(dataframe, filenames=None, family="mosquito"):
-    return run_r_analysis(dataframe, False, "procrustes.R", filenames=filenames, family=family)
+def procrustes_analysis(dataframe, filenames=None, family="mosquito", consensus_path=None):
+    return run_r_analysis(dataframe, False, "procrustes.R", filenames=filenames, family=family, consensus_path=consensus_path)
 
-def procrustes_semilandmark_analysis(dataframe, N_semi=CONFIG["N_semilandmarks"], slm_p_connection=CONFIG["semilandmarks_per_connection"], filenames=None, family="mosquito"):
-    return run_r_analysis(dataframe, True, "procrustes_semilandmarks.R", N_semi=N_semi, slm_p_connection=slm_p_connection, filenames=filenames, family=family)
+def procrustes_semilandmark_analysis(dataframe, N_semi=CONFIG["N_semilandmarks"], slm_p_connection=CONFIG["semilandmarks_per_connection"], filenames=None, family="mosquito", consensus_path=None):
+    return run_r_analysis(dataframe, True, "procrustes_semilandmarks.R", N_semi=N_semi, slm_p_connection=slm_p_connection, filenames=filenames, family=family, consensus_path=consensus_path)
 
 def anova_analysis(dataframe, filenames=None, family="mosquito"):
     return run_r_analysis(dataframe, False, "anova.R", filenames=filenames, family=family)
