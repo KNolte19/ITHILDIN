@@ -198,10 +198,12 @@ def remove_background(image, return_mask=True, bg_session=None, find_largest=Tru
 
 def align(image, mask, background_padding=0):
     """
-    Align image so major axis of foreground object is vertical.
+    Align image so the major axis of the foreground object is horizontal.
 
-    Rotates the image to make the wing's major axis point upward,
-    then crops to the bounding box of the rotated mask.
+    Rotates the image to make the wing's major axis horizontal, resolves the
+    180-degree ambiguity of the region orientation so the wing tip ends up on
+    the canonical side (CONFIG["wing_tip_side"]), then crops to the bounding
+    box of the rotated mask.
 
     Args:
         image (np.ndarray): RGB or grayscale image
@@ -234,6 +236,18 @@ def align(image, mask, background_padding=0):
         )
         > 0
     )
+
+    # Resolve the 180-degree ambiguity of regionprops orientation: the wing is
+    # narrow at its base and broadens towards the tip, so the bounding-box half
+    # with more foreground area is the tip half. Rotate a further 180 degrees
+    # (exact array reversal, no interpolation) if the tip is on the wrong side.
+    coords = np.argwhere(rotated_mask)
+    cmin, cmax = coords[:, 1].min(), coords[:, 1].max() + 1
+    mid = (cmin + cmax) // 2
+    tip_side = "left" if rotated_mask[:, cmin:mid].sum() > rotated_mask[:, mid:cmax].sum() else "right"
+    if tip_side != CONFIG.get("wing_tip_side", "right"):
+        rotated_img = rotated_img[::-1, ::-1]
+        rotated_mask = rotated_mask[::-1, ::-1]
 
     # Find bounding box of rotated mask
     coords = np.argwhere(rotated_mask)

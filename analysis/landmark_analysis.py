@@ -26,6 +26,7 @@ import pandas as pd
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 
 from analysis import geomorph
+from analysis import outlier_detection
 from transform import landmark_processing
 from config import CONFIG
 
@@ -54,7 +55,7 @@ def ensure_reference_model(semilandmark=False, family="mosquito"):
     a rebuild (e.g. after a major sklearn upgrade breaks the pickle).
 
     Returns:
-        dict: {"lda", "avg_max", "max_max", "consensus_path"}
+        dict: {"lda", "avg_max", "max_max", "reference_proc", "consensus_path"}
     """
     cache_key = (family, semilandmark)
     if cache_key in _reference_models:
@@ -68,14 +69,17 @@ def ensure_reference_model(semilandmark=False, family="mosquito"):
     reference_key = "semilandmark_reference_path" if semilandmark else "landmark_reference_path"
     reference_path = os.path.join(CONFIG["root_path"], CONFIG[reference_key])
 
-    # Load existing artifacts unless the reference CSV is newer
+    # Load existing artifacts unless the reference CSV is newer; landmark pickles
+    # from before the species-level outlier check lack "reference_proc" and are
+    # rebuilt (only the landmark model is used by detect_species_outlier)
     if os.path.exists(consensus_path) and os.path.exists(model_path):
         if os.path.getmtime(model_path) >= os.path.getmtime(reference_path):
             with open(model_path, "rb") as f:
                 model = pickle.load(f)
-            model["consensus_path"] = consensus_path
-            _reference_models[cache_key] = model
-            return model
+            if semilandmark or "reference_proc" in model:
+                model["consensus_path"] = consensus_path
+                _reference_models[cache_key] = model
+                return model
 
     # Build step 1: GPA over the reference set to obtain the consensus shape
     # (mshape = mean of the GPA-aligned coordinates)
@@ -111,7 +115,11 @@ def ensure_reference_model(semilandmark=False, family="mosquito"):
         "lda": lda,
         "avg_max": float(np.percentile(proc_df["Avg_Procrustes_Dist"], 95)),
         "max_max": float(np.percentile(proc_df["Max_Procrustes_Dist"], 95)),
+        # OPA-aligned reference coords + species labels (rows are positionally
+        # aligned), consumed by detect_species_outlier at inference
+        "reference_proc": proc_df[coord_cols].assign(**{"TAXA LABEL": reference_df["TAXA LABEL"].values}),
     }
+
     with open(model_path + ".tmp", "wb") as f:
         pickle.dump(model, f)
     os.replace(model_path + ".tmp", model_path)
@@ -312,3 +320,38 @@ def detect_outlier(dataframe, proc_dataframe, max_max="default", avg_max="defaul
         print("Outlier Detection not possible")
 
     return dataframe
+
+def detect_species_outlier(proc_dataframe, predicted_taxa, model, landmark_thresh=5.0):
+    """
+    Flags specimens whose aligned landmarks do not fit their predicted species.
+
+    Runs outlier_detection.identify_outliers over the reference specimens plus
+    the batch (group_col="TAXA LABEL"), so the per-species median shape and MAD
+    cutoffs come from the reference distribution, and returns only the batch
+    rows' results.
+
+    Args:
+        proc_dataframe (pd.DataFrame): OPA-aligned batch coordinates
+                                       (geomorph "1.X".."N.Y" columns).
+        predicted_taxa (list): LDA-predicted species per batch row.
+        model (dict): Reference model from ensure_reference_model().
+        landmark_thresh (float): Modified z-score cutoff for the per-landmark
+                                 check. Stricter than the default 3.5 because
+                                 testing 17 landmarks inflates false positives
+                                 (10.5% of the reference flagged at 3.5 vs 3.0%
+                                 at 5.0).
+
+    Returns:
+        pd.DataFrame: One row per batch specimen with "Outlier" and
+                      "Outlier_Landmark_IDs" columns.
+    """
+    reference = model["reference_proc"]
+    coord_cols = [col for col in reference.columns if ".X" in col or ".Y" in col]
+
+    batch = proc_dataframe[coord_cols].copy()
+    batch["TAXA LABEL"] = list(predicted_taxa)
+
+    combined = pd.concat([reference, batch], ignore_index=True)
+    result = outlier_detection.identify_outliers(combined, n_landmarks=len(coord_cols) // 2, group_col="TAXA LABEL", landmark_thresh=landmark_thresh)
+
+    return result.iloc[len(reference):].reset_index(drop=True)

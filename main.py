@@ -292,6 +292,20 @@ def get_landmark_predictions(dataframe, session, has_classifier=False):
                 prediction_df_semi, prediction_proc_df_semi, semilandmark=True, family=CONFIG["family"]
             )
 
+        # Species-level outlier check: does each specimen fit the reference
+        # distribution of its LDA-predicted species? (semilandmark map preferred,
+        # same fallback as the per-file loop below)
+        predicted_taxa = []
+        for file in prediction_df_landmarks["File_Name"]:
+            try:
+                file_lda_map = predictions_lda_map_semilandmarks[file]
+            except Exception as e:
+                file_lda_map = predictions_lda_map_landmarks[file]
+            predicted_taxa.append(file_lda_map[0][np.argmax(file_lda_map[1])])
+
+        outlier_df = landmark_analysis.detect_species_outlier(prediction_proc_df_landmarks, predicted_taxa, model_lm)
+        outlier_by_file = dict(zip(prediction_df_landmarks["File_Name"], outlier_df.to_dict(orient="records")))
+
         # Write results to dataframe
         for file in prediction_df_landmarks["File_Name"]:
             json_path = os.path.join(session["request_path_processed"], file.split(".")[0] + ".json")
@@ -349,6 +363,11 @@ def get_landmark_predictions(dataframe, session, has_classifier=False):
                         "map": predictions_lda_map
                     }
 
+            # Flag specimens that are shape outliers to their predicted species
+            outlier_result = outlier_by_file[file]
+            data["species_outlier"] = bool(outlier_result["Outlier"])
+            data["outlier_landmark_ids"] = list(outlier_result["Outlier_Landmark_IDs"])
+
             with open(json_path, "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=2)
 
@@ -376,6 +395,7 @@ def prepare_download(prediction_df, prediction_lm_df, prediction_slm_df, has_cla
                 "LM_Predicted_Score",
                 "ENS_Predicted_Taxa",
                 "ENS_Predicted_Score",
+                "Species_Outlier",
         ])
 
     # Save CSV files for download 

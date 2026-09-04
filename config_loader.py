@@ -43,6 +43,7 @@ MOSQUITO_CONFIG = {
     "N_semilandmarks": 52, # Total number of semilandmarks (sum of semilandmarks across all connections)
     "index_most_left_landmark": 0, # Index of the most left landmark (used for orientation)
     "index_most_right_landmark": 5, # Index of the most right landmark (used for orientation)
+    "wing_tip_side": "right", # Canonical tip side after align() (resolves the 180-deg rotation ambiguity)
     "index_most_upper_landmark": 1, # Index of the most upper landmark (used for orientation)
     "index_most_lower_landmark": 8, # Index of the most lower landmark (used for orientation)
     "allowed_connections": [ # List of allowed connections between landmarks for semilandmark placement
@@ -116,6 +117,7 @@ DROSOPHILA_CONFIG = {
     "N_semilandmarks": 26,
     "index_most_left_landmark": 3,
     "index_most_right_landmark": 6,
+    "wing_tip_side": "right", # Canonical tip side after align() (resolves the 180-deg rotation ambiguity)
     "index_most_upper_landmark": 0,
     "index_most_lower_landmark": 10,
     "allowed_connections": [
@@ -156,6 +158,7 @@ TSETSE_CONFIG = {
     "N_semilandmarks": 12,
     "index_most_left_landmark": 5,
     "index_most_right_landmark": 0,
+    "wing_tip_side": "right", # Canonical tip side after align() (resolves the 180-deg rotation ambiguity)
     "index_most_upper_landmark": 1,
     "index_most_lower_landmark": 7,
     "allowed_connections": [
@@ -191,8 +194,9 @@ PSYCHODIDAE_CONFIG = {
     },
     "N_landmarks": 12, 
     "N_semilandmarks": 59, 
-    "index_most_left_landmark": 0, 
-    "index_most_right_landmark": 4, 
+    "index_most_left_landmark": 0,
+    "index_most_right_landmark": 4,
+    "wing_tip_side": "right", # Canonical tip side after align() (resolves the 180-deg rotation ambiguity) 
     "index_most_upper_landmark": 0, 
     "index_most_lower_landmark": 7, 
     "allowed_connections": [

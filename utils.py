@@ -92,7 +92,7 @@ def json_to_dataframe(
     ]
 
     coord_columns = [f"X_{i}" for i in range(N)] + [f"Y_{i}" for i in range(N)]
-    landmark_columns = ["LM_Predicted_Taxa", "LM_Predicted_Score", "ENS_Predicted_Taxa", "ENS_Predicted_Score"]
+    landmark_columns = ["LM_Predicted_Taxa", "LM_Predicted_Score", "ENS_Predicted_Taxa", "ENS_Predicted_Score", "Species_Outlier"]
 
     if with_lm_predictions == True:
         coord_columns += landmark_columns
@@ -121,8 +121,9 @@ def json_to_dataframe(
                     json_data["landmark_prediction"]["score"],
                     json_data["ensemble_prediction"]["top"],
                     json_data["ensemble_prediction"]["score"],
+                    json_data.get("species_outlier", False),
                 ]
-            
+
             df.loc[i] = row
 
         except Exception as e:
@@ -173,6 +174,7 @@ def json_to_dataframe(
                                 json_data["landmark_prediction"]["score"],
                                 json_data["ensemble_prediction"]["top"],
                                 json_data["ensemble_prediction"]["score"],
+                                json_data.get("species_outlier", False),
                             ]
 
                     semilandmark_df.loc[i] = row
@@ -209,6 +211,9 @@ def json_to_dataframe(
             landmark_df[col] = pd.to_numeric(landmark_df[col], errors="coerce").round(2)
         if col == "ENS_Predicted_Score":
             landmark_df[col] = pd.to_numeric(landmark_df[col], errors="coerce").round(2)
+        if col == "Species_Outlier":
+            # NaN from error-fallback rows would be truthy in the template
+            landmark_df[col] = landmark_df[col].fillna(False).astype(bool)
         if col == "Centroid":
             landmark_df[col] = (
                 pd.to_numeric(landmark_df[col], errors="coerce")
